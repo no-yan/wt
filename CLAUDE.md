@@ -1,209 +1,11 @@
 # Claude Implementation Context
 
-This document contains essential context for Claude to implement and maintain the `wrkt` project.
+This document contains **Claude-specific instructions** for implementing and maintaining the `wrkt` project.
 
-## Project Overview
+## 🚨 CRITICAL DEVELOPMENT RULES
 
-**Goal**: Create a CLI tool that makes git worktree operations seamless by organizing worktrees in a predictable structure.
-
-**Problem**: Git worktrees require manual directory navigation (`cd`) and are scattered across filesystem.
-
-**Solution**: Simple CLI that organizes all worktrees in `worktrees/` subdirectory with zsh integration for navigation.
-
-## Technology Stack
-
-- **Language**: Go (1.21+)
-- **CLI Framework**: Cobra
-- **Shell Support**: Zsh only (no multi-shell complexity)
-- **Dependencies**: Minimal (cobra only for MVP)
-- **Target**: Single binary, works on macOS/Linux
-
-## Architecture
-
-```
-wrkt/
-├── main.go                 # Entry point
-├── cmd/                    # CLI commands (cobra)
-│   ├── root.go            # Root command
-│   ├── list.go            # List command (unified status display)
-│   ├── switch.go          # Switch command (path resolution only)
-│   ├── add.go             # Add command
-│   ├── remove.go          # Remove command
-│   ├── clean.go           # Clean command
-│   └── shell.go           # Shell integration command
-├── internal/              # Core logic
-│   ├── worktree.go        # Worktree operations
-│   ├── git.go             # Git integration
-│   ├── shell.go           # Zsh function generation
-│   └── display.go         # Output formatting
-└── docs/                  # Documentation
-```
-
-## Core Components
-
-### 1. Worktree Organization (Foundation)
-**All worktrees in `worktrees/` subdirectory**:
-- Predictable location: `$REPO_ROOT/worktrees/`
-- Auto-setup: Create directory and add to .gitignore
-- Simple path mapping: `feature/auth` → `worktrees/feature-auth/`
-- No permission issues (same owner as repo)
-
-### 2. Zsh Integration (Critical for Navigation)
-**Simple, reliable zsh-only shell integration**:
-- Generate zsh functions via `wrkt shell-init`
-- Intercept `wrkt switch` calls in zsh functions
-- Perform actual `cd` operations in the user's shell
-- Tab completion for all commands
-
-### 3. Simplified Command Set
-- **list**: Unified status display with filtering options
-- **switch**: Exact name matching (no fuzzy matching complexity)
-- **add**: Auto-path generation to `worktrees/` subdirectory
-- **remove**: Safe removal with confirmations
-- **clean**: Automated cleanup of stale worktrees
-- **shell-init**: Generate zsh integration code
-
-### 4. Simple Features
-- Zsh-only shell integration (eliminates multi-shell complexity)
-- Exact name matching (deterministic, predictable behavior)
-- Auto-path generation: `feature/auth` → `worktrees/feature-auth/`
-- Organized structure in single location
-- Clear error messages with available options
-
-## Implementation Guidelines
-
-### Code Style
-- Follow Go conventions
-- Use structured logging
-- Handle errors gracefully
-- Write tests for core logic
-
-### Git Integration
-- Use `git worktree` commands exclusively
-- Parse porcelain output for reliability
-- Handle edge cases (bare repos, submodules)
-- Validate git repository context
-
-### User Experience
-- Consistent command patterns
-- Clear error messages
-- Interactive prompts for destructive operations
-- Helpful suggestions for fuzzy matches
-
-## MVP Scope
-
-**Core Commands**:
-- `wrkt list` - Unified status display with filtering options
-- `wrkt switch <exact-name>` - Directory switching with zsh integration
-- `wrkt add <branch>` - Worktree creation in `worktrees/` subdirectory
-- `wrkt remove <exact-name>` - Safe worktree removal
-- `wrkt clean` - Cleanup stale worktrees
-- `wrkt shell-init` - Zsh integration setup
-
-**Essential Features**:
-- **Zsh-only shell integration** (mandatory for switch functionality)
-- **Exact name matching** (no fuzzy matching complexity)
-- **Worktrees in `worktrees/` subdirectory** (organized structure)
-- Auto-path generation with simple rules
-- Unified status display (replaces separate status command)
-- Tab completion for zsh
-- Auto-setup of worktrees directory and .gitignore
-
-**Out of MVP**:
-- Multi-shell support (bash, fish, etc.)
-- Fuzzy matching
-- GitHub PR status integration
-- Configuration files
-- Claude development status tracking
-- Batch operations
-- Previous directory tracking (`wrkt switch -`)
-
-## Quality Criteria
-
-### Functionality
-- All MVP commands work correctly
-- Fuzzy matching finds intended worktrees
-- Auto-path generation creates logical paths
-- Safe operations with proper error handling
-
-### Robustness
-- Handles edge cases (missing worktrees, invalid repos)
-- Graceful error messages
-- No data loss on operations
-- Works across different git repository states
-
-### Usability
-- Intuitive command interface
-- Clear help documentation
-- Consistent behavior patterns
-- Fast execution (<100ms for most operations)
-
-## Testing Strategy
-
-### Unit Tests
-- Worktree parser logic
-- Path generation algorithms
-- Fuzzy matching functions
-- Git command integration
-
-### Integration Tests
-- End-to-end command execution
-- Git repository interactions
-- File system operations
-- Error scenario handling
-
-### Manual Testing
-- Cross-platform compatibility
-- Real git repository workflows
-- Edge case scenarios
-- Performance validation
-
-## Development Commands
-
-```bash
-# Build and test
-go build -o wrkt
-go test ./...
-
-# Run linting
-golangci-lint run
-
-# Cross-platform builds
-GOOS=linux go build -o wrkt-linux
-GOOS=darwin go build -o wrkt-darwin
-GOOS=windows go build -o wrkt.exe
-```
-
-## Implementation Checklist
-
-- [ ] Set up Go module and dependencies
-- [ ] Implement worktree parser and data structures
-- [ ] Create cobra command structure
-- [ ] **Implement worktrees/ organization system** (foundation)
-- [ ] Auto-setup worktrees directory and .gitignore entry
-- [ ] Implement path generation: branch → worktree name
-- [ ] **Implement zsh shell integration system** (critical)
-- [ ] Implement shell-init command with zsh function generation
-- [ ] Implement list command with unified status display
-- [ ] Add filtering options (--dirty, --verbose, --names-only)
-- [ ] Implement switch command with exact name matching
-- [ ] Implement add command with worktrees/ path generation
-- [ ] Implement remove command with safety checks
-- [ ] Implement clean command for stale worktrees
-- [ ] Add zsh tab completion
-- [ ] Add comprehensive error handling
-- [ ] Write unit tests for core functions
-- [ ] Write integration tests for zsh functions
-- [ ] Test on macOS and Linux with zsh
-- [ ] Validate against quality criteria
-- [ ] Update documentation
-
-## Task Tracking System
-
-### CRITICAL: Always Use TodoWrite Tool for Task Management
-
-**Before starting any development work, Claude MUST:**
-
+### MANDATORY: TodoWrite/TodoRead Usage
+**Before starting ANY development work, Claude MUST:**
 1. **Read Current Todo List**: Use `TodoRead` tool to check existing tasks
 2. **Plan Work**: Use `TodoWrite` tool to create/update task list for the session
 3. **Track Progress**: Update todo status throughout development:
@@ -212,8 +14,38 @@ GOOS=windows go build -o wrkt.exe
    - `"completed"` - Task finished successfully
 4. **Mark Completion**: IMMEDIATELY mark tasks as completed when finished
 
-### CRITICAL: Parallel Development Manager Responsibilities
+### MANDATORY: Dogfooding Principles
+**Absolute Rules to Follow:**
+- **Always use wrkt commands for worktree operations**
+- **Prohibit direct branch operations in main directory**
+- **Prohibit branch switching within existing worktrees**
 
+**Correct Operation Procedure:**
+1. `./wrkt add <branch>` to create worktree
+2. `./wrkt switch <name>` to move (auto-cd after shell integration implementation, manual cd before)
+3. Work only within worktrees, no branch changes
+4. Always check status with `./wrkt list --verbose` at session start
+
+**Prohibited Operations:**
+```bash
+# ❌ Prohibited: Feature branch work in main directory
+git checkout -b feature/new-feature  
+
+# ❌ Prohibited: Branch switching within worktrees
+cd /path/to/worktree && git checkout other-branch
+
+# ✅ Correct: Create worktree with wrkt command
+./wrkt add feature/new-feature
+```
+
+**Design Philosophy:**
+- **1 worktree = 1 dedicated branch = 1 feature**
+- **Main directory = main branch only**
+- **Realize branch switching through worktree creation**
+
+## 📊 TASK MANAGEMENT
+
+### Parallel Development Manager Responsibilities
 **When acting as manager for multiple Claude agents working on different worktrees:**
 
 1. **Conflict Prevention**: Analyze all feature branches before assigning tasks to prevent merge conflicts
@@ -237,7 +69,6 @@ GOOS=windows go build -o wrkt.exe
 - Merge PRs sequentially to prevent conflicts
 
 ### Worktree Development Workflow
-
 **When working across multiple worktrees:**
 
 1. **Check WORKTREE_TRACKING.md** - Review status of all active worktrees
@@ -246,14 +77,12 @@ GOOS=windows go build -o wrkt.exe
 4. **Update tracking documents** when switching between worktrees
 5. **Commit frequently** with descriptive messages
 
-### Task Categories to Track
-
+### Task Categories
 - **High Priority**: Core functionality, bug fixes, incomplete features
 - **Medium Priority**: Enhancements, new features, optimizations  
 - **Low Priority**: Documentation, cleanup, nice-to-have features
 
 ### Example Todo Usage
-
 ```
 TodoWrite: [
   {"content": "Complete feature-list-filters worktree", "status": "in_progress", "priority": "high", "id": "1"},
@@ -261,6 +90,49 @@ TodoWrite: [
   {"content": "Update documentation", "status": "pending", "priority": "low", "id": "3"}
 ]
 ```
+
+## 🏗️ CORE IMPLEMENTATION NOTES
+
+### Worktree Organization
+- All worktrees created in `$REPO_ROOT/worktrees/` subdirectory
+- Auto-create worktrees/ directory on first use
+- Auto-add "worktrees/" to .gitignore
+- Path generation: `feature/auth` → `worktrees/feature-auth/`
+
+### Zsh Integration Implementation
+- `wrkt switch` command should only resolve and return the target path
+- Actual directory changing is handled by zsh functions
+- Zsh functions must be generated by `wrkt shell-init`
+- Only support zsh - show clear error for other shells
+
+### Command Design
+- `wrkt list` is the primary information command
+- No separate `wrkt status` - use `wrkt list --dirty` instead
+- `wrkt list --verbose` provides detailed git status
+- **Exact name matching only** - no fuzzy matching complexity
+
+## 🔧 DEVELOPMENT REFERENCE
+
+### Development Commands
+```bash
+# Build and test
+go build -o wrkt
+go test ./...
+
+# Run linting
+golangci-lint run
+```
+
+### Session Management Best Practices
+- **At start**: Verify worktree and branch consistency with `./wrkt list --verbose`
+- **During work**: Thorough use of wrkt commands
+- **When problems occur**: Priority resolution of root cause (dogfooding violations)
+- **Before ending**: Record status for next session
+
+### Troubleshooting Dogfooding Issues
+- **"Branch assignments are mixed up"**: Dogfooding principle violation, enforce wrkt command usage
+- **"Main directory on wrong branch"**: Caused by direct branch operations in main directory, return to main
+- **Branch confusion**: Root cause is using traditional git operations, execute all operations through wrkt commands
 
 ## Notes for Future Claude Sessions
 
@@ -279,96 +151,10 @@ TodoWrite: [
 13. **Clean command uses `git worktree prune`** - This is the correct approach for stale worktrees
 14. **Integration tests are comprehensive** - Cover full worktree lifecycle and edge cases
 
-## Critical Implementation Notes
+## Quick References
 
-### Worktree Organization
-- All worktrees created in `$REPO_ROOT/worktrees/` subdirectory
-- Auto-create worktrees/ directory on first use
-- Auto-add "worktrees/" to .gitignore
-- Path generation: `feature/auth` → `worktrees/feature-auth/`
-
-### Zsh Integration Implementation
-- `wrkt switch` command should only resolve and return the target path
-- Actual directory changing is handled by zsh functions
-- Zsh functions must be generated by `wrkt shell-init`
-- Only support zsh - show clear error for other shells
-
-### Command Design
-- `wrkt list` is the primary information command
-- No separate `wrkt status` - use `wrkt list --dirty` instead
-- `wrkt list --verbose` provides detailed git status
-- Exact name matching only - no fuzzy matching complexity
-
-## Dogfooding Essential Principles
-
-### Absolute Rules to Follow
-- **Always use wrkt commands for worktree operations**
-- **Prohibit direct branch operations in main directory**
-- **Prohibit branch switching within existing worktrees**
-
-### Correct Operation Procedure
-1. `./wrkt add <branch>` to create worktree
-2. `./wrkt switch <name>` to move (auto-cd after shell integration implementation, manual cd before)
-3. Work only within worktrees, no branch changes
-4. Always check status with `./wrkt list --verbose` at session start
-
-### Prohibited Operation Examples
-```bash
-# ❌ Prohibited: Feature branch work in main directory
-git checkout -b feature/new-feature  
-
-# ❌ Prohibited: Branch switching within worktrees
-cd /path/to/worktree && git checkout other-branch
-
-# ✅ Correct: Create worktree with wrkt command
-./wrkt add feature/new-feature
-```
-
-## Worktree Design Philosophy
-
-### Basic Principles
-- **1 worktree = 1 dedicated branch = 1 feature**
-- **Main directory = main branch only**
-- **Realize branch switching through worktree creation**
-
-### Design Concept
-Worktrees are designed as a "mechanism to physically separate branches":
-- Each worktree is an independent filesystem space
-- Achieve parallel development through changing work location, not branch changes
-- This design fundamentally prevents interference and confusion between branches
-
-### Correct Parallel Development Flow
-1. **Feature A**: `./wrkt add feature/a` → work in `feature-a` worktree
-2. **Feature B**: `./wrkt add feature/b` → work in `feature-b` worktree  
-3. **Integration**: Merge work in main directory (main branch)
-
-## Avoidance Patterns from Past Failures
-
-### Branch Confusion Causes and Countermeasures
-- **Root cause**: Using traditional git operations due to neglecting dogfooding
-- **Countermeasure**: Execute all operations through wrkt commands
-- **Verification method**: Check status with `./wrkt list --verbose` at session start
-- **Warning sign**: Main directory referencing branches other than main
-
-### Avoiding Design Principle Violations
-- **Root cause**: Insufficient understanding of "1 worktree 1 branch" principle
-- **Countermeasure**: Strict adherence to worktree design philosophy
-- **Prohibited operation**: `git checkout <branch>` within worktrees
-- **Correct operation**: Create new worktree for new branches
-
-### Session Management Best Practices
-- **At start**: Verify worktree and branch consistency
-- **During work**: Thorough use of wrkt commands
-- **When problems occur**: Priority resolution of root cause (dogfooding violations)
-- **Before ending**: Record status for next session
-
-## Troubleshooting Common Issues
-
-- **"wrkt switch doesn't change directory"**: User hasn't set up zsh integration
-- **"shell not supported"**: User not using zsh
-- **"command not found" after switch**: Zsh integration not loaded
-- **"worktree not found"**: Check exact name with `wrkt list`
-- **Path generation conflicts**: Simple conflict resolution with numbering
-- **Tab completion not working**: Zsh integration setup incomplete
-- **"Branch assignments are mixed up"**: Dogfooding principle violation, enforce wrkt command usage
-- **"Main directory on wrong branch"**: Caused by direct branch operations in main directory, return to main
+- **Project Overview**: See [README.md](README.md)
+- **MVP Scope**: See [docs/implementation/mvp.md](docs/implementation/mvp.md)
+- **Architecture**: See [docs/implementation/architecture.md](docs/implementation/architecture.md)
+- **Development Guidelines**: See [docs/implementation/contributing.md](docs/implementation/contributing.md)
+- **Command Reference**: See [docs/api/commands.md](docs/api/commands.md)

@@ -29,30 +29,30 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 - Handles empty worktree list gracefully
 
 #### 2. `wrkt switch <name>` (Shell Integration Required)
-- Switch to worktree directory with fuzzy matching
+- Switch to worktree directory with exact name matching
 - Requires shell integration setup via `wrkt shell-init`
-- Support exact name and partial name matching
+- Support exact name matching only
 - Change current working directory through shell functions
 
 **Acceptance Criteria:**
 - **Shell integration setup is mandatory**
-- Fuzzy matching finds worktrees by name/branch
+- Exact name matching finds worktrees by directory name
 - Changes to worktree directory on success (via shell function)
 - Clear error message for non-existent worktrees with suggestions
-- Handles ambiguous matches gracefully
-- Supports `wrkt switch -` for previous directory
+- Deterministic behavior with exact matching
 
 #### 3. `wrkt shell-init` (Critical Infrastructure)
 - Generate shell integration code for directory switching
-- Support bash, zsh, and fish shells
+- Support zsh only (eliminates multi-shell complexity)
 - Include tab completion for all commands
 - Handle shell function wrapper logic
 
 **Acceptance Criteria:**
-- Generates working shell functions for each supported shell
+- Generates working shell functions for zsh
 - Provides comprehensive tab completion
 - Handles `wrkt switch` interception correctly
 - Easy setup with `eval "$(wrkt shell-init)"`
+- Clear error message for non-zsh shells
 
 #### 4. `wrkt add <branch> [path]`
 - Create new worktree for specified branch
@@ -67,12 +67,12 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 - Handles path conflicts with unique naming
 
 #### 5. `wrkt remove <name>`
-- Remove worktree safely with fuzzy matching
+- Remove worktree safely with exact name matching
 - Confirm removal of dirty worktrees
 - Prevent removal of main worktree
 
 **Acceptance Criteria:**
-- Fuzzy matching finds worktree to remove
+- Exact name matching finds worktree to remove
 - Confirms removal of dirty worktrees
 - Prevents main worktree removal
 - Cleans up administrative files
@@ -80,9 +80,8 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 ### ✅ Smart Features
 
 #### 1. Shell Integration (Mandatory)
-- Shell function generation for bash, zsh, fish
+- Shell function generation for zsh only
 - Tab completion for commands and worktree names
-- Previous directory tracking for `wrkt switch -`
 - Seamless integration like zoxide/autojump
 
 #### 2. Unified Status Display
@@ -90,16 +89,15 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 - Filtering options replace separate status command
 - Consistent interface reduces cognitive load
 
-#### 3. Fuzzy Matching
-- Match worktrees by directory name
-- Match by branch name
-- Match by partial path
+#### 3. Exact Name Matching
+- Match worktrees by exact directory name
+- Deterministic, predictable behavior
 - Error suggestions when no match found
 
-**Matching Priority:**
-1. Exact match on directory basename
-2. Substring match on branch name
-3. Substring match on full path
+**Matching Rules:**
+1. Exact match on directory basename only
+2. Case-sensitive matching
+3. No partial or fuzzy matching complexity
 
 #### 4. Auto-Path Generation
 - `feature/auth` → `../feature-auth/`
@@ -182,10 +180,9 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
    - `wrkt add` creates worktree in correct location
    - `wrkt remove` safely removes worktree
 
-2. **Fuzzy matching is intuitive**
-   - Common use cases work without exact names
-   - Ambiguous matches are handled clearly
-   - Error messages are helpful
+2. **Exact matching is predictable**
+   - Deterministic behavior with exact names
+   - Error messages are helpful with suggestions
 
 3. **Auto-path generation is logical**
    - Generated paths are predictable
@@ -202,7 +199,7 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 1. **Performance**
    - Commands execute in <100ms for typical repositories
    - List command handles 20+ worktrees efficiently
-   - Fuzzy matching is responsive
+   - Exact matching is instant
 
 2. **Usability**
    - Commands are intuitive for git users
@@ -220,7 +217,7 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 
 1. **Unit Tests**
    - Worktree parsing logic
-   - Fuzzy matching algorithms
+   - Exact name matching functions
    - Path generation functions
    - Error handling scenarios
 
@@ -469,7 +466,7 @@ wrkt clean
 ### Performance Benchmarks
 
 - `wrkt list` with 10 worktrees: <50ms
-- `wrkt switch` with fuzzy matching: <100ms
+- `wrkt switch` with exact matching: <10ms
 - `wrkt add` with auto-path: <200ms
 - `wrkt remove` with confirmation: <100ms
 
@@ -487,7 +484,7 @@ wrkt clean
 - Implement remove command
 
 ### Phase 3: Smart Features (Week 3)
-- Add fuzzy matching
+- Implement exact name matching
 - Implement auto-path generation
 - Add status indicators
 - Enhance error handling
