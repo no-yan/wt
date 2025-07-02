@@ -15,7 +15,7 @@ func TestIntegrationWorkflow(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
 	}
-	
+
 	// Skip in CI environments or when git is not properly configured
 	if os.Getenv("CI") != "" {
 		t.Skip("Skipping integration test in CI environment")
