@@ -299,6 +299,69 @@ TodoWrite: [
 - `wrkt list --verbose` provides detailed git status
 - Exact name matching only - no fuzzy matching complexity
 
+## Dogfooding Essential Principles
+
+### Absolute Rules to Follow
+- **Always use wrkt commands for worktree operations**
+- **Prohibit direct branch operations in main directory**
+- **Prohibit branch switching within existing worktrees**
+
+### Correct Operation Procedure
+1. `./wrkt add <branch>` to create worktree
+2. `./wrkt switch <name>` to move (auto-cd after shell integration implementation, manual cd before)
+3. Work only within worktrees, no branch changes
+4. Always check status with `./wrkt list --verbose` at session start
+
+### Prohibited Operation Examples
+```bash
+# ❌ Prohibited: Feature branch work in main directory
+git checkout -b feature/new-feature  
+
+# ❌ Prohibited: Branch switching within worktrees
+cd /path/to/worktree && git checkout other-branch
+
+# ✅ Correct: Create worktree with wrkt command
+./wrkt add feature/new-feature
+```
+
+## Worktree Design Philosophy
+
+### Basic Principles
+- **1 worktree = 1 dedicated branch = 1 feature**
+- **Main directory = main branch only**
+- **Realize branch switching through worktree creation**
+
+### Design Concept
+Worktrees are designed as a "mechanism to physically separate branches":
+- Each worktree is an independent filesystem space
+- Achieve parallel development through changing work location, not branch changes
+- This design fundamentally prevents interference and confusion between branches
+
+### Correct Parallel Development Flow
+1. **Feature A**: `./wrkt add feature/a` → work in `feature-a` worktree
+2. **Feature B**: `./wrkt add feature/b` → work in `feature-b` worktree  
+3. **Integration**: Merge work in main directory (main branch)
+
+## Avoidance Patterns from Past Failures
+
+### Branch Confusion Causes and Countermeasures
+- **Root cause**: Using traditional git operations due to neglecting dogfooding
+- **Countermeasure**: Execute all operations through wrkt commands
+- **Verification method**: Check status with `./wrkt list --verbose` at session start
+- **Warning sign**: Main directory referencing branches other than main
+
+### Avoiding Design Principle Violations
+- **Root cause**: Insufficient understanding of "1 worktree 1 branch" principle
+- **Countermeasure**: Strict adherence to worktree design philosophy
+- **Prohibited operation**: `git checkout <branch>` within worktrees
+- **Correct operation**: Create new worktree for new branches
+
+### Session Management Best Practices
+- **At start**: Verify worktree and branch consistency
+- **During work**: Thorough use of wrkt commands
+- **When problems occur**: Priority resolution of root cause (dogfooding violations)
+- **Before ending**: Record status for next session
+
 ## Troubleshooting Common Issues
 
 - **"wrkt switch doesn't change directory"**: User hasn't set up zsh integration
@@ -307,3 +370,5 @@ TodoWrite: [
 - **"worktree not found"**: Check exact name with `wrkt list`
 - **Path generation conflicts**: Simple conflict resolution with numbering
 - **Tab completion not working**: Zsh integration setup incomplete
+- **"Branch assignments are mixed up"**: Dogfooding principle violation, enforce wrkt command usage
+- **"Main directory on wrong branch"**: Caused by direct branch operations in main directory, return to main
