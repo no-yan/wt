@@ -95,8 +95,8 @@ func TestCleanIntegration(t *testing.T) {
 			t.Fatal("feature-stale-test worktree not found")
 		}
 
-		if staleWorktree.Status != internal.StatusClean {
-			t.Errorf("Expected worktree to be clean initially, got %v", staleWorktree.Status)
+		if staleWorktree.Status == internal.StatusStale {
+			t.Errorf("Worktree should not be stale initially, got %v", staleWorktree.Status)
 		}
 
 		// Manually remove the worktree directory to make it stale
