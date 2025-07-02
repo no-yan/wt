@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
@@ -20,11 +19,11 @@ func TestCleanIntegration(t *testing.T) {
 	}
 
 	// Create temporary directory for test repo
-	tempDir, err := ioutil.TempDir("", "wrkt-clean-test-")
+	tempDir, err := os.MkdirTemp("", "wrkt-clean-test-")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() { _ = os.RemoveAll(tempDir) }()
 
 	// Initialize git repo
 	if err := runGitCommand(tempDir, "git", "init"); err != nil {
@@ -44,7 +43,7 @@ func TestCleanIntegration(t *testing.T) {
 
 	// Create initial commit
 	readmeFile := filepath.Join(tempDir, "README.md")
-	if err := ioutil.WriteFile(readmeFile, []byte("# Test Repo\n"), 0644); err != nil {
+	if err := os.WriteFile(readmeFile, []byte("# Test Repo\n"), 0644); err != nil {
 		t.Fatalf("Failed to create README: %v", err)
 	}
 	if err := runGitCommand(tempDir, "git", "add", "README.md"); err != nil {
@@ -67,7 +66,7 @@ func TestCleanIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get current directory: %v", err)
 	}
-	defer os.Chdir(originalDir)
+	defer func() { _ = os.Chdir(originalDir) }()
 
 	if err := os.Chdir(tempDir); err != nil {
 		t.Fatalf("Failed to change to temp dir: %v", err)

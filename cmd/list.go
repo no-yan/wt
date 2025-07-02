@@ -78,13 +78,17 @@ func formatWorktreeList(worktrees []internal.Worktree, w io.Writer) {
 			status = "stale"
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t(%s)\n", wt.Name(), wt.Path, status)
+		if _, err := fmt.Fprintf(w, "%s\t%s\t(%s)\n", wt.Name(), wt.Path, status); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
+		}
 	}
 }
 
 func formatWorktreeNames(worktrees []internal.Worktree, w io.Writer) {
 	for _, wt := range worktrees {
-		fmt.Fprintf(w, "%s\n", wt.Name())
+		if _, err := fmt.Fprintf(w, "%s\n", wt.Name()); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
+		}
 	}
 }
 
@@ -98,17 +102,25 @@ func formatWorktreeListVerbose(worktrees []internal.Worktree, w io.Writer, servi
 			status = "stale"
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", wt.Name(), wt.Branch, wt.Path, status)
+		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", wt.Name(), wt.Branch, wt.Path, status); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
+		}
 
 		// Show detailed status for dirty worktrees
 		if wt.Status == internal.StatusDirty {
 			if statusOutput, err := service.GetDetailedStatus(wt.Path); err == nil {
-				fmt.Fprintf(w, "  Changes:\n")
+				if _, err := fmt.Fprintf(w, "  Changes:\n"); err != nil {
+					fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
+				}
 				for _, line := range statusOutput {
-					fmt.Fprintf(w, "    %s\n", line)
+					if _, err := fmt.Fprintf(w, "    %s\n", line); err != nil {
+						fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
+					}
 				}
 			}
 		}
-		fmt.Fprintf(w, "\n")
+		if _, err := fmt.Fprintf(w, "\n"); err != nil {
+			fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
+		}
 	}
 }

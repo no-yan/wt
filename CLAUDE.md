@@ -29,7 +29,7 @@ This document contains **Claude-specific instructions** for implementing and mai
 **Prohibited Operations:**
 ```bash
 # ❌ Prohibited: Feature branch work in main directory
-git checkout -b feature/new-feature  
+git checkout -b feature/new-feature
 
 # ❌ Prohibited: Branch switching within worktrees
 cd /path/to/worktree && git checkout other-branch
@@ -79,7 +79,7 @@ cd /path/to/worktree && git checkout other-branch
 
 ### Task Categories
 - **High Priority**: Core functionality, bug fixes, incomplete features
-- **Medium Priority**: Enhancements, new features, optimizations  
+- **Medium Priority**: Enhancements, new features, optimizations
 - **Low Priority**: Documentation, cleanup, nice-to-have features
 
 ### Example Todo Usage
@@ -111,50 +111,11 @@ TodoWrite: [
 - `wrkt list --verbose` provides detailed git status
 - **Exact name matching only** - no fuzzy matching complexity
 
-## 🔧 DEVELOPMENT REFERENCE
+## Troubleshooting Common Issues
 
-### Development Commands
-```bash
-# Build and test
-go build -o wrkt
-go test ./...
-
-# Run linting
-golangci-lint run
-```
-
-### Session Management Best Practices
-- **At start**: Verify worktree and branch consistency with `./wrkt list --verbose`
-- **During work**: Thorough use of wrkt commands
-- **When problems occur**: Priority resolution of root cause (dogfooding violations)
-- **Before ending**: Record status for next session
-
-### Troubleshooting Dogfooding Issues
-- **"Branch assignments are mixed up"**: Dogfooding principle violation, enforce wrkt command usage
-- **"Main directory on wrong branch"**: Caused by direct branch operations in main directory, return to main
-- **Branch confusion**: Root cause is using traditional git operations, execute all operations through wrkt commands
-
-## Notes for Future Claude Sessions
-
-1. **Zsh-only integration** - Don't implement multi-shell support
-2. **Worktrees go in `worktrees/` subdirectory** - Always use this location
-3. **No fuzzy matching** - Exact name matching only
-4. **Always check existing code** before implementing new features
-5. **Follow the established patterns** in cmd/ and internal/ directories
-6. **Test zsh integration** thoroughly
-7. **Update tests** when adding new functionality
-8. **Validate MVP scope** - don't add features beyond core requirements
-9. **Test with real git repositories** to ensure robustness
-10. **Update documentation** when changing behavior
-11. **ALWAYS USE TodoWrite/TodoRead** - Essential for tracking progress across sessions
-12. **Check WORKTREE_TRACKING.md** - Review worktree status before starting work
-13. **Clean command uses `git worktree prune`** - This is the correct approach for stale worktrees
-14. **Integration tests are comprehensive** - Cover full worktree lifecycle and edge cases
-
-## Quick References
-
-- **Project Overview**: See [README.md](README.md)
-- **MVP Scope**: See [docs/implementation/mvp.md](docs/implementation/mvp.md)
-- **Architecture**: See [docs/implementation/architecture.md](docs/implementation/architecture.md)
-- **Development Guidelines**: See [docs/implementation/contributing.md](docs/implementation/contributing.md)
-- **Command Reference**: See [docs/api/commands.md](docs/api/commands.md)
+- **"wrkt switch doesn't change directory"**: User hasn't set up zsh integration
+- **"shell not supported"**: User not using zsh
+- **"command not found" after switch**: Zsh integration not loaded
+- **"worktree not found"**: Check exact name with `wrkt list`
+- **Path generation conflicts**: Simple conflict resolution with numbering
+- **Tab completion not working**: Zsh integration setup incomplete

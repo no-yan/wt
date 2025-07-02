@@ -44,6 +44,7 @@ func shouldSkipIntegrationTest() bool {
 		// We'll configure it in the test, but check if global config exists
 		if err := exec.Command("git", "config", "--global", "user.name").Run(); err != nil {
 			// No global config, but that's ok - we set it in the test
+			_ = err // Suppress linter warning
 		}
 	}
 

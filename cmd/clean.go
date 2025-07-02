@@ -61,7 +61,7 @@ Use --force to skip confirmation prompts.`,
 		if !cleanForce {
 			fmt.Print("\nProceed with cleanup? (y/N): ")
 			var response string
-			fmt.Scanln(&response)
+			_, _ = fmt.Scanln(&response)
 			if response != "y" && response != "Y" {
 				fmt.Println("Cleanup cancelled.")
 				return
