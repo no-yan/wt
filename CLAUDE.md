@@ -1,6 +1,56 @@
 # Claude Implementation Context
 
-This document contains **Claude-specific instructions** for implementing and maintaining the `wrkt` project.
+## 🚨🚨🚨 THE THREE COMMANDMENTS - NEVER VIOLATE 🚨🚨🚨
+
+### COMMANDMENT 1: THOU SHALT NOT use `git checkout` or `git switch` in main directory
+### COMMANDMENT 2: THOU SHALT NOT change branches within any worktree
+### COMMANDMENT 3: THOU SHALT use wrkt commands for ALL branch/worktree operations
+
+## 🔒 MANDATORY PRE-COMMAND VALIDATION
+
+**COPY AND RUN THIS BEFORE EVERY GIT OPERATION:**
+
+```bash
+#!/bin/bash
+# DOGFOODING VALIDATION - RUN BEFORE ANY GIT COMMAND
+validate_dogfooding() {
+    local current_dir=$(pwd)
+    local current_branch=$(git branch --show-current 2>/dev/null || echo "unknown")
+    
+    echo "📍 Current location: $current_dir"
+    echo "🌿 Current branch: $current_branch"
+    
+    # Check if in main directory with wrong branch
+    if [[ "$current_dir" == */wrkt ]] && [[ "$current_branch" != "main" ]]; then
+        echo "❌ CRITICAL VIOLATION: Main directory on wrong branch!"
+        echo "🔧 Required fix: git checkout main"
+        echo "⚠️  Future operations: Use worktrees only"
+        return 1
+    fi
+    
+    # Check for prohibited commands
+    read -p "Enter your intended git command: " git_command
+    if [[ "$git_command" =~ "checkout -b" ]] || [[ "$git_command" =~ "switch -c" ]]; then
+        echo "❌ PROHIBITED COMMAND: $git_command"
+        echo "✅ Use instead: ./wrkt add <branch-name>"
+        return 1
+    fi
+    
+    if [[ "$git_command" =~ "checkout" ]] || [[ "$git_command" =~ "switch" ]]; then
+        if [[ "$current_dir" == */wrkt ]]; then
+            echo "❌ PROHIBITED: No branch switching in main directory"
+            echo "✅ Use instead: ./wrkt switch <worktree-name>"
+            return 1
+        fi
+    fi
+    
+    echo "✅ Validation passed - command allowed"
+    return 0
+}
+
+# Run validation
+validate_dogfooding
+```
 
 ## 🚨 CRITICAL DEVELOPMENT RULES
 
@@ -45,37 +95,140 @@ cd /path/to/worktree && git checkout other-branch
 
 ## 📊 TASK MANAGEMENT
 
-### Parallel Development Manager Responsibilities
-**When acting as manager for multiple Claude agents working on different worktrees:**
+### Autonomous Agent Management Protocol
 
-1. **Conflict Prevention**: Analyze all feature branches before assigning tasks to prevent merge conflicts
-2. **Priority-Based Coordination**: Pause lower priority work when conflicts are detected
-3. **Sequential Integration**: Merge features one-by-one in dependency order
-4. **Test Validation**: Ensure ALL tests pass before any merge attempt
-5. **Rollback Strategy**: Abort merges immediately if tests fail
-6. **Documentation Updates**: Record all coordination decisions and conflicts in CLAUDE.md
+**CRITICAL**: The recurring `git checkout -b` failures occur due to context-switching cognitive load when managing multiple agents simultaneously. The solution is **autonomous agent architecture**.
 
-**Conflict Resolution Protocol:**
-- Run `git diff f0c4919..branch --name-only` to analyze file changes
-- Stop development on conflicting features until higher priority merges complete
-- Coordinate timing of commits to avoid simultaneous changes to same files
-- Always test merges in clean environment before final integration
+#### Manager Responsibilities (Instruction Architect)
+1. **Create Complete Instructions** - Not commands
+2. **Monitor Results** - Not process
+3. **Handle Escalations** - Not micromanage
+4. **Sequential Task Assignment** - Never concurrent development
 
-**GitHub PR Integration Process:**
-- Use GitHub Pull Requests for all feature merges instead of direct git merge
-- Create PRs using `gh pr create` with proper titles and descriptions
-- Ensure all tests pass in PR before merging
-- Use PR reviews to validate changes before integration
-- Merge PRs sequentially to prevent conflicts
+#### Agent Instruction Packet Structure
 
-### Worktree Development Workflow
-**When working across multiple worktrees:**
+Each agent receives a complete, self-contained instruction document:
+
+```yaml
+task_id: "feature-x-pr"
+worktree_path: "/Users/noyan/ghq/github.com/no-yan/wrkt/worktrees/feature-x"
+branch: "feature/x"
+objective: "Create PR for feature X"
+
+mandatory_constraints:
+  - work_only_in: "/Users/noyan/ghq/github.com/no-yan/wrkt/worktrees/feature-x"
+  - never_use: ["git checkout", "git switch"]
+  - never_leave_worktree: true
+  - use_wrkt_commands_only: true
+
+validation_checkpoints:
+  - pre_start: "verify_worktree_location_and_branch"
+  - pre_commit: "run_all_tests"
+  - pre_push: "verify_dogfooding_compliance"
+  - pre_pr: "confirm_no_branch_violations"
+
+escalation_triggers:
+  - "merge conflicts"
+  - "test failures after 3 attempts"
+  - "any git command error"
+  - "temptation to use git checkout"
+
+autonomous_decisions:
+  - fix_lint_errors: "yes"
+  - commit_incremental_progress: "yes"
+  - revert_failed_changes: "yes"
+  - create_pr_when_tests_pass: "yes"
+```
+
+#### Example Agent Launch Process
+
+```bash
+# 1. Manager creates complete instruction file
+cat > /tmp/agent_task_feature_x.md << 'EOF'
+# Autonomous Agent Task: Feature X PR Creation
+
+## PRE-FLIGHT VALIDATION (MANDATORY)
+```bash
+# You MUST run this before starting
+cd /Users/noyan/ghq/github.com/no-yan/wrkt/worktrees/feature-x
+[[ $(pwd) == */worktrees/feature-x ]] || { echo "ERROR: Wrong directory"; exit 1; }
+[[ $(git branch --show-current) == "feature/x" ]] || { echo "ERROR: Wrong branch"; exit 1; }
+echo "✅ Validation passed - you are in the correct worktree"
+```
+
+## YOUR MISSION
+1. Review uncommitted changes with `git status`
+2. Run tests with `go test ./...`
+3. Fix any failing tests (within this worktree only)
+4. Commit changes with descriptive message
+5. Push to origin: `git push -u origin feature/x`
+6. Create PR with `gh pr create`
+7. Notify completion
+
+## DECISION TREE
+- Tests failing? → Fix within worktree (NEVER switch branches)
+- Need different branch? → STOP and escalate to manager
+- Merge conflicts? → ESCALATE immediately
+- Lint errors? → Fix within worktree
+
+## ABSOLUTELY PROHIBITED
+- `git checkout` (any form)
+- `git switch` (any form)
+- Leaving worktree directory
+- Any branch operations
+
+## SUCCESS CRITERIA
+✅ All tests pass
+✅ No dogfooding violations
+✅ PR created successfully
+✅ Sound notification played
+EOF
+
+# 2. Launch autonomous agent
+claude --autonomous --task-file /tmp/agent_task_feature_x.md
+```
+
+#### Cognitive Load Reduction Benefits
+
+1. **Manager Focus**: Creates instructions, not commands
+2. **No Context Juggling**: Agents work independently
+3. **Constraint Enforcement**: Validation built into instructions
+4. **Error Prevention**: Pre-command checks eliminate violations
+5. **Clear Boundaries**: Each agent owns exactly one worktree
+
+#### Conflict Resolution Protocol
+- **Sequential Development**: Complete one task before starting next
+- **Conflict Analysis**: Use `git diff base..branch --name-only` before task assignment
+- **Priority-Based Sequencing**: High priority features complete first
+- **PR-Based Integration**: All merges via GitHub PRs
+- **Test Validation**: All tests must pass before merge
+
+#### GitHub PR Integration Process
+- Each autonomous agent creates its own PR
+- Manager reviews and merges PRs sequentially
+- No parallel merging to prevent conflicts
+- Test validation required for each PR
+
+### Sequential Worktree Development Workflow
+**Instruction-First Development to Prevent Cognitive Load Issues:**
 
 1. **Check WORKTREE_TRACKING.md** - Review status of all active worktrees
-2. **Use TodoWrite** to plan which worktrees to work on
-3. **Work systematically** - Complete one worktree before moving to next
-4. **Update tracking documents** when switching between worktrees
-5. **Commit frequently** with descriptive messages
+2. **Use TodoWrite** to plan task sequence (one at a time)
+3. **Create Complete Instructions** - Write full agent packet before starting
+4. **Launch Single Agent** - Never manage multiple agents simultaneously
+5. **Wait for Completion** - Agent reports back when done
+6. **Verify Results** - Check PR created, tests pass, no violations
+7. **Next Task** - Only then move to next worktree
+
+**Mental Model for Managers:**
+```
+Instruction Creation → Agent Launch → Wait → Verify → Next
+```
+
+**Never:**
+```
+Agent 1 + Agent 2 + Agent 3 → Context switching → git checkout -b errors
+```
 
 ### Task Categories
 - **High Priority**: Core functionality, bug fixes, incomplete features
@@ -90,6 +243,97 @@ TodoWrite: [
   {"content": "Update documentation", "status": "pending", "priority": "low", "id": "3"}
 ]
 ```
+
+## 🧠 COGNITIVE LOAD MANAGEMENT
+
+### Mental Model Reconstruction
+
+**WRONG Mental Model (causes failures):**
+"Git repository with worktree rules to remember"
+
+**CORRECT Mental Model (prevents failures):**
+"Worktree-managed codebase where Git is an implementation detail"
+
+### Pre-Command Decision Framework
+
+**Before ANY command, mandatory thought process:**
+
+```
+1. LOCATION CHECK: Where am I?
+   → $(pwd) = ? 
+   → Main directory or worktree?
+
+2. OPERATION CHECK: What do I want to achieve?
+   → New branch? Use `wrkt add`
+   → Switch context? Use `wrkt switch`
+   → Git operation? Validate against dogfooding
+
+3. CONSTRAINT CHECK: Does this violate the three commandments?
+   → Commandment 1: No git checkout in main
+   → Commandment 2: No branch switching in worktrees
+   → Commandment 3: Use wrkt commands only
+
+4. ALTERNATIVE CHECK: What's the wrkt way?
+   → Every git operation has a wrkt equivalent
+   → When in doubt, use wrkt commands
+```
+
+### Context-Switching Error Prevention
+
+**The Problem:** Managing multiple agents simultaneously causes **cognitive contamination** where standard Git patterns override project-specific constraints.
+
+**The Solution:** Instruction-first autonomous architecture
+
+**Pattern Recognition Training:**
+
+```
+❌ DANGER PATTERN: "I need to test this, let me create a branch"
+✅ SAFE PATTERN: "I need to test this, am I in the right worktree?"
+
+❌ DANGER PATTERN: "Quick git checkout to..."
+✅ SAFE PATTERN: "Wait, let me run dogfooding validation first"
+
+❌ DANGER PATTERN: Managing 3 agents simultaneously
+✅ SAFE PATTERN: One complete instruction, one agent, one task
+```
+
+### Failure Recovery Protocol
+
+**When dogfooding violation occurs:**
+
+1. **STOP ALL OPERATIONS** immediately
+2. **Verify current state** of all worktrees:
+   ```bash
+   cd /Users/noyan/ghq/github.com/no-yan/wrkt
+   ./wrkt list --verbose
+   ```
+3. **Identify contamination:**
+   - Which directory is on wrong branch?
+   - Are there uncommitted changes to preserve?
+4. **Clean state:**
+   ```bash
+   # If main directory contaminated
+   cd /Users/noyan/ghq/github.com/no-yan/wrkt
+   git checkout main
+   ```
+5. **Redesign approach** using instruction-first method
+6. **Update mental model** to prevent recurrence
+
+### Constraint Integration Techniques
+
+**Make dogfooding principles automatic:**
+
+1. **Command Generation Reframe:**
+   - Instead of "git checkout -b" → "wrkt add"
+   - Instead of "cd worktree && git switch" → "wrkt switch"
+
+2. **Validation Automation:**
+   - Run validation script before every git command
+   - Embed constraints in instruction templates
+
+3. **Mental Anchoring:**
+   - Default assumption: "I cannot change branches"
+   - Exception handling: "Different branch = different worktree"
 
 ## 🏗️ CORE IMPLEMENTATION NOTES
 
