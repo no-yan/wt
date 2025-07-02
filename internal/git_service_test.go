@@ -14,8 +14,10 @@ func TestGitService_ListWorktrees(t *testing.T) {
 		wantErr       bool
 	}{
 		{
-			name:      "single worktree",
-			gitOutput: `/repo /abc123 [main]`,
+			name: "single worktree",
+			gitOutput: `worktree /repo
+HEAD abc123
+branch refs/heads/main`,
 			statusOutputs: map[string]string{
 				"/repo": "",
 			},
@@ -31,8 +33,13 @@ func TestGitService_ListWorktrees(t *testing.T) {
 		},
 		{
 			name: "multiple worktrees with mixed status",
-			gitOutput: `/repo /abc123 [main]
-/repo/worktrees/feature-auth /def456 [feature/auth]`,
+			gitOutput: `worktree /repo
+HEAD abc123
+branch refs/heads/main
+
+worktree /repo/worktrees/feature-auth
+HEAD def456
+branch refs/heads/feature/auth`,
 			statusOutputs: map[string]string{
 				"/repo":                        "",
 				"/repo/worktrees/feature-auth": " M file.go\n?? new.go",

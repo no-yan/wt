@@ -1,0 +1,21 @@
+# Worktrees directory
+worktrees/
+
+# Binary
+wrkt
+wrkt-*
+
+# Go build cache
+*.out
+*.test
+*.prof
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db

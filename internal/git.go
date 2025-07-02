@@ -1,49 +1,68 @@
 package internal
 
 import (
-	"regexp"
 	"strings"
 )
-
-var worktreeLineRegex = regexp.MustCompile(`^(\S+)\s+/(\S+)\s+\[(.+)\]$|^(\S+)\s+/(\S+)\s+\((.+)\)$`)
 
 func ParseWorktreeList(output string) []Worktree {
 	if strings.TrimSpace(output) == "" {
 		return []Worktree{}
 	}
 
-	lines := strings.Split(strings.TrimSpace(output), "\n")
-	worktrees := make([]Worktree, 0, len(lines))
+	worktreeBlocks := strings.Split(strings.TrimSpace(output), "\n\n")
+	worktrees := make([]Worktree, 0, len(worktreeBlocks))
 
-	for _, line := range lines {
-		line = strings.TrimSpace(line)
-		if line == "" {
+	for _, block := range worktreeBlocks {
+		block = strings.TrimSpace(block)
+		if block == "" {
 			continue
 		}
 
-		matches := worktreeLineRegex.FindStringSubmatch(line)
-		if matches == nil {
-			continue
+		worktree := parseWorktreeBlock(block)
+		if worktree != nil {
+			worktrees = append(worktrees, *worktree)
 		}
-
-		var path, head, branch string
-		if matches[1] != "" {
-			path, head, branch = matches[1], matches[2], matches[3]
-		} else {
-			path, head, branch = matches[4], matches[5], matches[6]
-		}
-
-		worktree := Worktree{
-			Path:   path,
-			Head:   head,
-			Branch: branch,
-			Status: StatusClean,
-		}
-
-		worktrees = append(worktrees, worktree)
 	}
 
 	return worktrees
+}
+
+func parseWorktreeBlock(block string) *Worktree {
+	lines := strings.Split(block, "\n")
+	if len(lines) < 2 {
+		return nil
+	}
+
+	var path, head, branch string
+
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if strings.HasPrefix(line, "worktree ") {
+			path = strings.TrimPrefix(line, "worktree ")
+		} else if strings.HasPrefix(line, "HEAD ") {
+			head = strings.TrimPrefix(line, "HEAD ")
+		} else if strings.HasPrefix(line, "branch ") {
+			branchRef := strings.TrimPrefix(line, "branch ")
+			if strings.HasPrefix(branchRef, "refs/heads/") {
+				branch = strings.TrimPrefix(branchRef, "refs/heads/")
+			} else {
+				branch = branchRef
+			}
+		} else if line == "detached" {
+			branch = "detached HEAD"
+		}
+	}
+
+	if path == "" || head == "" {
+		return nil
+	}
+
+	return &Worktree{
+		Path:   path,
+		Head:   head,
+		Branch: branch,
+		Status: StatusClean,
+	}
 }
 
 func ParseWorktreeStatus(output string) Status {

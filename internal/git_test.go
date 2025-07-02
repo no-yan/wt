@@ -12,8 +12,10 @@ func TestParseWorktreeList(t *testing.T) {
 		want   []Worktree
 	}{
 		{
-			name:   "single worktree",
-			output: `/repo /abc123 [main]`,
+			name: "single worktree porcelain format",
+			output: `worktree /repo
+HEAD abc123
+branch refs/heads/main`,
 			want: []Worktree{
 				{
 					Path:   "/repo",
@@ -24,9 +26,14 @@ func TestParseWorktreeList(t *testing.T) {
 			},
 		},
 		{
-			name: "multiple worktrees",
-			output: `/repo /abc123 [main]
-/repo/worktrees/feature-auth /def456 [feature/auth]`,
+			name: "multiple worktrees porcelain format",
+			output: `worktree /repo
+HEAD abc123
+branch refs/heads/main
+
+worktree /repo/worktrees/test-feature
+HEAD def456
+branch refs/heads/test-feature`,
 			want: []Worktree{
 				{
 					Path:   "/repo",
@@ -35,16 +42,18 @@ func TestParseWorktreeList(t *testing.T) {
 					Status: StatusClean,
 				},
 				{
-					Path:   "/repo/worktrees/feature-auth",
+					Path:   "/repo/worktrees/test-feature",
 					Head:   "def456",
-					Branch: "feature/auth",
+					Branch: "test-feature",
 					Status: StatusClean,
 				},
 			},
 		},
 		{
-			name:   "detached head",
-			output: `/repo /abc123 (detached HEAD)`,
+			name: "detached head porcelain format",
+			output: `worktree /repo
+HEAD abc123
+detached`,
 			want: []Worktree{
 				{
 					Path:   "/repo",
