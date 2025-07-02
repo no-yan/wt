@@ -37,6 +37,8 @@ func formatWorktreeList(worktrees []internal.Worktree, w io.Writer) {
 			status = "stale"
 		}
 
-		fmt.Fprintf(w, "%s\t%s\t(%s)\n", wt.Name(), wt.Path, status)
+		if _, err := fmt.Fprintf(w, "%s\t%s\t(%s)\n", wt.Name(), wt.Path, status); err != nil {
+			fmt.Fprintf(os.Stderr, "Error formatting worktree list")
+		}
 	}
 }
