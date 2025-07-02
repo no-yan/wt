@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 )
@@ -98,5 +99,6 @@ func (m *MockCommandRunner) Run(command string) (string, error) {
 	if output, exists := m.outputs[command]; exists {
 		return output, nil
 	}
-	return "", nil
+	// Simulate command failure for commands not in outputs
+	return "", fmt.Errorf("command failed: %s", command)
 }

@@ -353,3 +353,69 @@ func generateMockWorktreeOutput(worktrees []Worktree) string {
 	}
 	return strings.Join(parts, "\n\n")
 }
+
+func TestWorktreeManager_EnsureGitignoreEntry(t *testing.T) {
+	tests := []struct {
+		name          string
+		repoRoot      string
+		existingEntry bool
+		wantCommands  []string
+		wantErr       bool
+	}{
+		{
+			name:          "add new gitignore entry",
+			repoRoot:      "/repo",
+			existingEntry: false,
+			wantCommands: []string{
+				"grep -q '^worktrees/$' '/repo/.gitignore'",
+				"echo 'worktrees/' >> '/repo/.gitignore'",
+			},
+			wantErr: false,
+		},
+		{
+			name:          "entry already exists",
+			repoRoot:      "/repo",
+			existingEntry: true,
+			wantCommands: []string{
+				"grep -q '^worktrees/$' '/repo/.gitignore'",
+			},
+			wantErr: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRunner := &MockCommandRunner{
+				outputs: make(map[string]string),
+			}
+
+			// Setup mock responses
+			grepCmd := "grep -q '^worktrees/$' '/repo/.gitignore'"
+			if tt.existingEntry {
+				mockRunner.outputs[grepCmd] = ""
+			} else {
+				// Don't add grep command to outputs so it will return error
+				// Add the echo command to outputs so it succeeds
+				mockRunner.outputs["echo 'worktrees/' >> '/repo/.gitignore'"] = ""
+			}
+
+			service := NewGitService(mockRunner)
+			manager := NewWorktreeManager(service, mockRunner)
+
+			err := manager.ensureGitignoreEntry(tt.repoRoot)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("ensureGitignoreEntry() error = %v, wantErr %v", err, tt.wantErr)
+			}
+
+			// Check that expected commands were run
+			if !tt.existingEntry && len(mockRunner.commands) < 2 {
+				t.Errorf("ensureGitignoreEntry() expected at least 2 commands, got %d: %v",
+					len(mockRunner.commands), mockRunner.commands)
+			} else if tt.existingEntry && len(mockRunner.commands) < 1 {
+				t.Errorf("ensureGitignoreEntry() expected at least 1 command, got %d: %v",
+					len(mockRunner.commands), mockRunner.commands)
+			}
+		})
+	}
+}

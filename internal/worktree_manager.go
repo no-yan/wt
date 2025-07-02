@@ -90,6 +90,33 @@ func (wm *WorktreeManager) ensureWorktreesDirectory(worktreesDir string) error {
 	if _, err := wm.runner.Run(mkdirCmd); err != nil {
 		return fmt.Errorf("failed to create directory %q: %w", worktreesDir, err)
 	}
+
+	// Auto-setup .gitignore entry for worktrees directory
+	repoRoot := filepath.Dir(worktreesDir)
+	if err := wm.ensureGitignoreEntry(repoRoot); err != nil {
+		// Don't fail the operation if .gitignore setup fails, just warn
+		fmt.Printf("Warning: failed to setup .gitignore entry: %v\n", err)
+	}
+
+	return nil
+}
+
+func (wm *WorktreeManager) ensureGitignoreEntry(repoRoot string) error {
+	gitignorePath := filepath.Join(repoRoot, ".gitignore")
+
+	// Check if .gitignore already contains worktrees/ entry
+	checkCmd := fmt.Sprintf("grep -q '^worktrees/$' %s", shellescape(gitignorePath))
+	if _, err := wm.runner.Run(checkCmd); err == nil {
+		// Entry already exists
+		return nil
+	}
+
+	// Add worktrees/ entry to .gitignore
+	addCmd := fmt.Sprintf("echo 'worktrees/' >> %s", shellescape(gitignorePath))
+	if _, err := wm.runner.Run(addCmd); err != nil {
+		return fmt.Errorf("failed to add worktrees/ to .gitignore: %w", err)
+	}
+
 	return nil
 }
 
