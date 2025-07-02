@@ -25,7 +25,10 @@ func (w Worktree) IsClean() bool {
 }
 
 func (w Worktree) Name() string {
-	return filepath.Base(w.Path)
+	if strings.Contains(w.Path, "/worktrees/") {
+		return filepath.Base(w.Path)
+	}
+	return BranchToWorktreeName(w.Branch)
 }
 
 func BranchToWorktreeName(branch string) string {

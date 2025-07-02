@@ -48,7 +48,15 @@ func TestWorktree_Name(t *testing.T) {
 		want     string
 	}{
 		{
-			name: "main branch",
+			name: "main repo worktree",
+			worktree: Worktree{
+				Branch: "main",
+				Path:   "/repo",
+			},
+			want: "main",
+		},
+		{
+			name: "worktrees subdirectory",
 			worktree: Worktree{
 				Branch: "main",
 				Path:   "/repo/worktrees/main",
