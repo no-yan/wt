@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -17,11 +16,15 @@ func TestIntegrationWorkflow(t *testing.T) {
 	}
 
 	// Create temporary directory for test repo
-	tempDir, err := ioutil.TempDir("", "wrkt-integration-test-")
+	tempDir, err := os.MkdirTemp("", "wrkt-integration-test-")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}
-	defer os.RemoveAll(tempDir)
+	defer func() {
+		if err := os.RemoveAll(tempDir); err != nil {
+			t.Logf("Failed to remove temp dir: %v", err)
+		}
+	}()
 
 	// Initialize git repo
 	if err := runGitCommand(tempDir, "git", "init"); err != nil {
@@ -38,7 +41,7 @@ func TestIntegrationWorkflow(t *testing.T) {
 
 	// Create initial commit
 	readmeFile := filepath.Join(tempDir, "README.md")
-	if err := ioutil.WriteFile(readmeFile, []byte("# Test Repo\n"), 0644); err != nil {
+	if err := os.WriteFile(readmeFile, []byte("# Test Repo\n"), 0644); err != nil {
 		t.Fatalf("Failed to create README: %v", err)
 	}
 	if err := runGitCommand(tempDir, "git", "add", "README.md"); err != nil {
@@ -67,7 +70,11 @@ func TestIntegrationWorkflow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to get current directory: %v", err)
 	}
-	defer os.Chdir(originalDir)
+	defer func() {
+		if err := os.Chdir(originalDir); err != nil {
+			t.Logf("Failed to restore original directory: %v", err)
+		}
+	}()
 
 	if err := os.Chdir(tempDir); err != nil {
 		t.Fatalf("Failed to change to temp dir: %v", err)
@@ -96,7 +103,7 @@ func TestIntegrationWorkflow(t *testing.T) {
 
 		// Verify .gitignore entry was added
 		gitignorePath := filepath.Join(tempDir, ".gitignore")
-		if content, err := ioutil.ReadFile(gitignorePath); err == nil {
+		if content, err := os.ReadFile(gitignorePath); err == nil {
 			if !strings.Contains(string(content), "worktrees/") {
 				t.Error(".gitignore does not contain worktrees/ entry")
 			}
@@ -178,7 +185,7 @@ func TestIntegrationWorkflow(t *testing.T) {
 		// Add a file to the feature-test2 worktree to make it dirty
 		test2Path := filepath.Join(tempDir, "worktrees", "feature-test2")
 		testFile := filepath.Join(test2Path, "test.txt")
-		if err := ioutil.WriteFile(testFile, []byte("test content"), 0644); err != nil {
+		if err := os.WriteFile(testFile, []byte("test content"), 0644); err != nil {
 			t.Fatalf("Failed to create test file: %v", err)
 		}
 
