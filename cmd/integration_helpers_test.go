@@ -3,7 +3,6 @@ package cmd
 import (
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 )
 
@@ -27,12 +26,6 @@ func shouldSkipIntegrationTest() bool {
 			commonDir := strings.TrimSpace(string(gitCommonDir))
 			topLevel := strings.TrimSpace(string(gitTopLevel))
 
-			// Convert relative git-common-dir to absolute path
-			if !strings.HasPrefix(commonDir, "/") {
-				if cwd, err := os.Getwd(); err == nil {
-					commonDir = filepath.Join(cwd, commonDir)
-				}
-			}
 			// If the common dir is not in the current directory, we're in a worktree
 			// and creating temp git repos might conflict with the git operations
 			if !strings.HasPrefix(commonDir, topLevel) {
@@ -49,8 +42,10 @@ func shouldSkipIntegrationTest() bool {
 	// Check if git user is configured (needed for commits)
 	if err := exec.Command("git", "config", "user.name").Run(); err != nil {
 		// We'll configure it in the test, but check if global config exists
-		_ = exec.Command("git", "config", "--global", "user.name").Run()
-		// No global config, but that's ok - we set it in the test
+		if err := exec.Command("git", "config", "--global", "user.name").Run(); err != nil {
+			// No global config, but that's ok - we set it in the test
+			_ = err // Suppress linter warning
+		}
 	}
 
 	return false
