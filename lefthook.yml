@@ -1,7 +1,7 @@
 pre-commit:
   commands:
     fmt:
-      run: go fmt ./...
+      run: goimports -w .
       glob: "*.go"
       stage_fixed: true
     vet:
