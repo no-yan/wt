@@ -33,6 +33,9 @@ func TestCleanIntegration(t *testing.T) {
 	if err := runGitCommand(tempDir, "git", "config", "user.email", "test@example.com"); err != nil {
 		t.Fatalf("Failed to configure git email: %v", err)
 	}
+	if err := runGitCommand(tempDir, "git", "config", "init.defaultBranch", "main"); err != nil {
+		t.Fatalf("Failed to configure default branch: %v", err)
+	}
 
 	// Create initial commit
 	readmeFile := filepath.Join(tempDir, "README.md")
