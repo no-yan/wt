@@ -49,9 +49,8 @@ func shouldSkipIntegrationTest() bool {
 	// Check if git user is configured (needed for commits)
 	if err := exec.Command("git", "config", "user.name").Run(); err != nil {
 		// We'll configure it in the test, but check if global config exists
-		if err := exec.Command("git", "config", "--global", "user.name").Run(); err != nil {
-			// No global config, but that's ok - we set it in the test
-		}
+		_ = exec.Command("git", "config", "--global", "user.name").Run()
+		// No global config, but that's ok - we set it in the test
 	}
 
 	return false
