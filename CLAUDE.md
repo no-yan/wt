@@ -219,6 +219,66 @@ GOOS=windows go build -o wrkt.exe
 - [ ] Performance testing and optimization
 - [ ] Documentation updates and examples
 
+**Before starting any development work, Claude MUST:**
+
+1. **Read Current Todo List**: Use `TodoRead` tool to check existing tasks
+2. **Plan Work**: Use `TodoWrite` tool to create/update task list for the session
+3. **Track Progress**: Update todo status throughout development:
+   - `"pending"` - Task not yet started
+   - `"in_progress"` - Currently working on (limit to ONE at a time)
+   - `"completed"` - Task finished successfully
+4. **Mark Completion**: IMMEDIATELY mark tasks as completed when finished
+
+### CRITICAL: Parallel Development Manager Responsibilities
+
+**When acting as manager for multiple Claude agents working on different worktrees:**
+
+1. **Conflict Prevention**: Analyze all feature branches before assigning tasks to prevent merge conflicts
+2. **Priority-Based Coordination**: Pause lower priority work when conflicts are detected
+3. **Sequential Integration**: Merge features one-by-one in dependency order
+4. **Test Validation**: Ensure ALL tests pass before any merge attempt
+5. **Rollback Strategy**: Abort merges immediately if tests fail
+6. **Documentation Updates**: Record all coordination decisions and conflicts in CLAUDE.md
+
+**Conflict Resolution Protocol:**
+- Run `git diff f0c4919..branch --name-only` to analyze file changes
+- Stop development on conflicting features until higher priority merges complete
+- Coordinate timing of commits to avoid simultaneous changes to same files
+- Always test merges in clean environment before final integration
+
+**GitHub PR Integration Process:**
+- Use GitHub Pull Requests for all feature merges instead of direct git merge
+- Create PRs using `gh pr create` with proper titles and descriptions
+- Ensure all tests pass in PR before merging
+- Use PR reviews to validate changes before integration
+- Merge PRs sequentially to prevent conflicts
+
+### Worktree Development Workflow
+
+**When working across multiple worktrees:**
+
+1. **Check WORKTREE_TRACKING.md** - Review status of all active worktrees
+2. **Use TodoWrite** to plan which worktrees to work on
+3. **Work systematically** - Complete one worktree before moving to next
+4. **Update tracking documents** when switching between worktrees
+5. **Commit frequently** with descriptive messages
+
+### Task Categories to Track
+
+- **High Priority**: Core functionality, bug fixes, incomplete features
+- **Medium Priority**: Enhancements, new features, optimizations  
+- **Low Priority**: Documentation, cleanup, nice-to-have features
+
+### Example Todo Usage
+
+```
+TodoWrite: [
+  {"content": "Complete feature-list-filters worktree", "status": "in_progress", "priority": "high", "id": "1"},
+  {"content": "Add zsh tab completion", "status": "pending", "priority": "medium", "id": "2"},
+  {"content": "Update documentation", "status": "pending", "priority": "low", "id": "3"}
+]
+```
+
 ## Notes for Future Claude Sessions
 
 1. **Zsh-only integration** - Don't implement multi-shell support

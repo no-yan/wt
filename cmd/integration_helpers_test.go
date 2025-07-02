@@ -33,7 +33,6 @@ func shouldSkipIntegrationTest() bool {
 					commonDir = filepath.Join(cwd, commonDir)
 				}
 			}
-
 			// If the common dir is not in the current directory, we're in a worktree
 			// and creating temp git repos might conflict with the git operations
 			if !strings.HasPrefix(commonDir, topLevel) {

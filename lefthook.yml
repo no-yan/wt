@@ -24,5 +24,5 @@ pre-push:
       run: go build -o wrkt
       glob: "*.go"
     lint:
-      run: golangci-lint run --fix -D errcheck
+      run: golangci-lint run
       glob: "*.go"
