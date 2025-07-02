@@ -13,6 +13,10 @@ func TestCleanIntegration(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
+	if shouldSkipIntegrationTest() {
+		t.Skip("Skipping integration test due to environment")
+	}
+
 	// Create temporary directory for test repo
 	tempDir, err := os.MkdirTemp("", "wrkt-clean-test-")
 	if err != nil {

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -13,6 +12,10 @@ import (
 func TestIntegrationWorkflow(t *testing.T) {
 	if testing.Short() {
 		t.Skip("Skipping integration test in short mode")
+	}
+
+	if shouldSkipIntegrationTest() {
+		t.Skip("Skipping integration test due to environment")
 	}
 
 	// Create temporary directory for test repo
@@ -235,12 +238,4 @@ func TestIntegrationWorkflow(t *testing.T) {
 			t.Error("Status lines should mention test.txt file")
 		}
 	})
-}
-
-func runGitCommand(dir string, command ...string) error {
-	cmd := exec.Command(command[0], command[1:]...)
-	cmd.Dir = dir
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	return cmd.Run()
 }
