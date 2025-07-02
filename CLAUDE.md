@@ -212,6 +212,30 @@ GOOS=windows go build -o wrkt.exe
    - `"completed"` - Task finished successfully
 4. **Mark Completion**: IMMEDIATELY mark tasks as completed when finished
 
+### CRITICAL: Parallel Development Manager Responsibilities
+
+**When acting as manager for multiple Claude agents working on different worktrees:**
+
+1. **Conflict Prevention**: Analyze all feature branches before assigning tasks to prevent merge conflicts
+2. **Priority-Based Coordination**: Pause lower priority work when conflicts are detected
+3. **Sequential Integration**: Merge features one-by-one in dependency order
+4. **Test Validation**: Ensure ALL tests pass before any merge attempt
+5. **Rollback Strategy**: Abort merges immediately if tests fail
+6. **Documentation Updates**: Record all coordination decisions and conflicts in CLAUDE.md
+
+**Conflict Resolution Protocol:**
+- Run `git diff f0c4919..branch --name-only` to analyze file changes
+- Stop development on conflicting features until higher priority merges complete
+- Coordinate timing of commits to avoid simultaneous changes to same files
+- Always test merges in clean environment before final integration
+
+**GitHub PR Integration Process:**
+- Use GitHub Pull Requests for all feature merges instead of direct git merge
+- Create PRs using `gh pr create` with proper titles and descriptions
+- Ensure all tests pass in PR before merging
+- Use PR reviews to validate changes before integration
+- Merge PRs sequentially to prevent conflicts
+
 ### Worktree Development Workflow
 
 **When working across multiple worktrees:**

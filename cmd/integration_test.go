@@ -3,7 +3,6 @@ package cmd
 import (
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -16,9 +15,9 @@ func TestIntegrationWorkflow(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	// Skip in CI environments or when git is not properly configured
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping integration test in CI environment")
+	// Skip in problematic environments
+	if shouldSkipIntegrationTest() {
+		t.Skip("Skipping integration test in problematic environment")
 	}
 
 	// Create temporary directory for test repo
@@ -250,11 +249,4 @@ func TestIntegrationWorkflow(t *testing.T) {
 			t.Error("Status lines should mention test.txt file")
 		}
 	})
-}
-
-func runGitCommand(dir string, command ...string) error {
-	cmd := exec.Command(command[0], command[1:]...)
-	cmd.Dir = dir
-	// Don't output to stdout/stderr to avoid cluttering test output
-	return cmd.Run()
 }

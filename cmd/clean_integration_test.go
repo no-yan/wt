@@ -14,9 +14,9 @@ func TestCleanIntegration(t *testing.T) {
 		t.Skip("Skipping integration test in short mode")
 	}
 
-	// Skip in CI environments or when git is not properly configured
-	if os.Getenv("CI") != "" {
-		t.Skip("Skipping integration test in CI environment")
+	// Skip in problematic environments
+	if shouldSkipIntegrationTest() {
+		t.Skip("Skipping integration test in problematic environment")
 	}
 
 	// Create temporary directory for test repo
