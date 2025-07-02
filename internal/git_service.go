@@ -1,6 +1,7 @@
 package internal
 
 import (
+	"fmt"
 	"os/exec"
 	"strings"
 )
@@ -46,10 +47,16 @@ func NewExecCommandRunner() *ExecCommandRunner {
 func (e *ExecCommandRunner) Run(command string) (string, error) {
 	parts := strings.Fields(command)
 	if len(parts) == 0 {
-		return "", nil
+		return "", fmt.Errorf("empty command")
 	}
 
 	cmd := exec.Command(parts[0], parts[1:]...)
 	output, err := cmd.Output()
-	return string(output), err
+	if err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return "", fmt.Errorf("command failed: %s: %s", err, exitErr.Stderr)
+		}
+		return "", fmt.Errorf("command execution failed: %w", err)
+	}
+	return string(output), nil
 }

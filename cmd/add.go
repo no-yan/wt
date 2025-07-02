@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/no-yan/wrkt/internal"
 	"github.com/spf13/cobra"
@@ -39,7 +40,13 @@ var addCmd = &cobra.Command{
 func getRepoRoot(runner internal.CommandRunner) (string, error) {
 	output, err := runner.Run("git rev-parse --show-toplevel")
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("not in a git repository: %w", err)
 	}
-	return output[:len(output)-1], nil
+
+	repoPath := strings.TrimSpace(output)
+	if repoPath == "" {
+		return "", fmt.Errorf("git rev-parse returned empty path")
+	}
+
+	return repoPath, nil
 }

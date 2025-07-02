@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"fmt"
 	"path/filepath"
+	"strings"
 )
 
 type WorktreeManager struct {
@@ -17,18 +19,136 @@ func NewWorktreeManager(gitService *GitService, runner CommandRunner) *WorktreeM
 }
 
 func (wm *WorktreeManager) AddWorktree(repoPath, branch string) (string, error) {
+	if err := validateBranchName(branch); err != nil {
+		return "", err
+	}
+
+	if err := validatePath(repoPath); err != nil {
+		return "", fmt.Errorf("invalid repository path: %w", err)
+	}
+
 	worktreePath := GenerateWorktreePath(repoPath, branch)
 	worktreesDir := filepath.Dir(worktreePath)
 
-	if _, err := wm.runner.Run("mkdir -p " + worktreesDir); err != nil {
-		return "", err
+	if err := wm.ensureWorktreesDirectory(worktreesDir); err != nil {
+		return "", fmt.Errorf("failed to create worktrees directory: %w", err)
 	}
 
-	if _, err := wm.runner.Run("git -C " + repoPath + " worktree add " + worktreePath + " " + branch); err != nil {
-		return "", err
+	if err := wm.addGitWorktree(repoPath, worktreePath, branch); err != nil {
+		return "", fmt.Errorf("failed to add worktree: %w", err)
 	}
 
 	return worktreePath, nil
+}
+
+func (wm *WorktreeManager) RemoveWorktree(repoPath, name string) error {
+	if err := validatePath(repoPath); err != nil {
+		return fmt.Errorf("invalid repository path: %w", err)
+	}
+
+	if name == "" {
+		return fmt.Errorf("worktree name cannot be empty")
+	}
+
+	// Get all worktrees to find the target
+	worktrees, err := wm.gitService.ListWorktrees()
+	if err != nil {
+		return fmt.Errorf("failed to list worktrees: %w", err)
+	}
+
+	var targetWorktree *Worktree
+	for _, wt := range worktrees {
+		if wt.Name() == name {
+			targetWorktree = &wt
+			break
+		}
+	}
+
+	if targetWorktree == nil {
+		return fmt.Errorf("worktree %q not found", name)
+	}
+
+	// Safety check: don't remove the main worktree
+	if !strings.Contains(targetWorktree.Path, "/worktrees/") {
+		return fmt.Errorf("cannot remove main worktree %q", name)
+	}
+
+	// Safety check: warn if worktree has uncommitted changes
+	if targetWorktree.Status == StatusDirty {
+		return fmt.Errorf("worktree %q has uncommitted changes, commit or stash them first", name)
+	}
+
+	if err := wm.removeGitWorktree(repoPath, targetWorktree.Path); err != nil {
+		return fmt.Errorf("failed to remove worktree: %w", err)
+	}
+
+	return nil
+}
+
+func (wm *WorktreeManager) ensureWorktreesDirectory(worktreesDir string) error {
+	mkdirCmd := fmt.Sprintf("mkdir -p %s", shellescape(worktreesDir))
+	if _, err := wm.runner.Run(mkdirCmd); err != nil {
+		return fmt.Errorf("failed to create directory %q: %w", worktreesDir, err)
+	}
+	return nil
+}
+
+func (wm *WorktreeManager) addGitWorktree(repoPath, worktreePath, branch string) error {
+	gitCmd := fmt.Sprintf("git -C %s worktree add %s %s",
+		shellescape(repoPath),
+		shellescape(worktreePath),
+		shellescape(branch))
+
+	if _, err := wm.runner.Run(gitCmd); err != nil {
+		return fmt.Errorf("git worktree add failed: %w", err)
+	}
+	return nil
+}
+
+func (wm *WorktreeManager) removeGitWorktree(repoPath, worktreePath string) error {
+	gitCmd := fmt.Sprintf("git -C %s worktree remove %s",
+		shellescape(repoPath),
+		shellescape(worktreePath))
+
+	if _, err := wm.runner.Run(gitCmd); err != nil {
+		return fmt.Errorf("git worktree remove failed: %w", err)
+	}
+	return nil
+}
+
+func shellescape(s string) string {
+	if strings.ContainsAny(s, " \t\n\r\"'\\|&;()<>{}[]$`") {
+		return "'" + strings.ReplaceAll(s, "'", "'\"'\"'") + "'"
+	}
+	return s
+}
+
+func validateBranchName(branch string) error {
+	if branch == "" {
+		return fmt.Errorf("branch name cannot be empty")
+	}
+
+	if strings.ContainsAny(branch, ";&|`$(){}[]<>") {
+		return fmt.Errorf("invalid characters in branch name: %q", branch)
+	}
+
+	if strings.HasPrefix(branch, "-") {
+		return fmt.Errorf("branch name cannot start with dash: %q", branch)
+	}
+
+	return nil
+}
+
+func validatePath(path string) error {
+	if path == "" {
+		return fmt.Errorf("path cannot be empty")
+	}
+
+	if !filepath.IsAbs(path) {
+		return fmt.Errorf("path must be absolute: %q", path)
+	}
+
+	return nil
 }
 
 func GenerateWorktreePath(repoPath, branch string) string {

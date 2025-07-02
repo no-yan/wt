@@ -13,11 +13,14 @@ seamless navigation with zsh integration.
 All worktrees are organized in the worktrees/ subdirectory for easy management.`,
 }
 
-func Execute() {
-	rootCmd.Execute()
+func Execute() error {
+	return rootCmd.Execute()
 }
 
 func init() {
 	rootCmd.AddCommand(listCmd)
 	rootCmd.AddCommand(addCmd)
+	rootCmd.AddCommand(switchCmd)
+	rootCmd.AddCommand(removeCmd)
+	rootCmd.AddCommand(shellInitCmd)
 }

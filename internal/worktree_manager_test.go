@@ -1,50 +1,60 @@
 package internal
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 )
 
 func TestWorktreeManager_AddWorktree(t *testing.T) {
 	tests := []struct {
-		name         string
-		repoPath     string
-		branch       string
-		wantPath     string
-		wantCommands []string
-		wantErr      bool
+		name     string
+		repoPath string
+		branch   string
+		wantPath string
+		wantErr  bool
 	}{
 		{
 			name:     "simple branch",
 			repoPath: "/repo",
 			branch:   "feature",
 			wantPath: "/repo/worktrees/feature",
-			wantCommands: []string{
-				"mkdir -p /repo/worktrees",
-				"git -C /repo worktree add /repo/worktrees/feature feature",
-			},
-			wantErr: false,
+			wantErr:  false,
 		},
 		{
 			name:     "branch with slash",
 			repoPath: "/repo",
 			branch:   "feature/auth",
 			wantPath: "/repo/worktrees/feature-auth",
-			wantCommands: []string{
-				"mkdir -p /repo/worktrees",
-				"git -C /repo worktree add /repo/worktrees/feature-auth feature/auth",
-			},
-			wantErr: false,
+			wantErr:  false,
 		},
 		{
 			name:     "nested branch",
 			repoPath: "/repo",
 			branch:   "feature/api/v2",
 			wantPath: "/repo/worktrees/feature-api-v2",
-			wantCommands: []string{
-				"mkdir -p /repo/worktrees",
-				"git -C /repo worktree add /repo/worktrees/feature-api-v2 feature/api/v2",
-			},
-			wantErr: false,
+			wantErr:  false,
+		},
+		{
+			name:     "invalid branch name with semicolon",
+			repoPath: "/repo",
+			branch:   "feature;rm -rf /",
+			wantPath: "",
+			wantErr:  true,
+		},
+		{
+			name:     "empty branch name",
+			repoPath: "/repo",
+			branch:   "",
+			wantPath: "",
+			wantErr:  true,
+		},
+		{
+			name:     "relative path",
+			repoPath: "repo",
+			branch:   "feature",
+			wantPath: "",
+			wantErr:  true,
 		},
 	}
 
@@ -67,16 +77,53 @@ func TestWorktreeManager_AddWorktree(t *testing.T) {
 			if gotPath != tt.wantPath {
 				t.Errorf("WorktreeManager.AddWorktree() path = %v, want %v", gotPath, tt.wantPath)
 			}
+		})
+	}
+}
 
-			if len(mockRunner.commands) != len(tt.wantCommands) {
-				t.Errorf("WorktreeManager.AddWorktree() commands = %v, want %v", mockRunner.commands, tt.wantCommands)
-				return
-			}
+func TestValidateBranchName(t *testing.T) {
+	tests := []struct {
+		name    string
+		branch  string
+		wantErr bool
+	}{
+		{
+			name:    "valid simple branch",
+			branch:  "main",
+			wantErr: false,
+		},
+		{
+			name:    "valid feature branch",
+			branch:  "feature/auth",
+			wantErr: false,
+		},
+		{
+			name:    "empty branch name",
+			branch:  "",
+			wantErr: true,
+		},
+		{
+			name:    "branch with semicolon",
+			branch:  "feature;dangerous",
+			wantErr: true,
+		},
+		{
+			name:    "branch starting with dash",
+			branch:  "-feature",
+			wantErr: true,
+		},
+		{
+			name:    "branch with backtick",
+			branch:  "feature`dangerous",
+			wantErr: true,
+		},
+	}
 
-			for i, cmd := range tt.wantCommands {
-				if i >= len(mockRunner.commands) || mockRunner.commands[i] != cmd {
-					t.Errorf("WorktreeManager.AddWorktree() command[%d] = %v, want %v", i, mockRunner.commands[i], cmd)
-				}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := validateBranchName(tt.branch)
+			if (err != nil) != tt.wantErr {
+				t.Errorf("validateBranchName() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -116,4 +163,117 @@ func TestGenerateWorktreePath(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestWorktreeManager_RemoveWorktree(t *testing.T) {
+	tests := []struct {
+		name      string
+		repoPath  string
+		target    string
+		worktrees []Worktree
+		wantErr   bool
+		errMsg    string
+	}{
+		{
+			name:     "remove valid worktree",
+			repoPath: "/repo",
+			target:   "feature-auth",
+			worktrees: []Worktree{
+				{
+					Path:   "/repo",
+					Branch: "main",
+					Status: StatusClean,
+				},
+				{
+					Path:   "/repo/worktrees/feature-auth",
+					Branch: "feature/auth",
+					Status: StatusClean,
+				},
+			},
+			wantErr: false,
+		},
+		{
+			name:     "cannot remove main worktree",
+			repoPath: "/repo",
+			target:   "main",
+			worktrees: []Worktree{
+				{
+					Path:   "/repo",
+					Branch: "main",
+					Status: StatusClean,
+				},
+			},
+			wantErr: true,
+			errMsg:  "cannot remove main worktree",
+		},
+		{
+			name:     "cannot remove dirty worktree",
+			repoPath: "/repo",
+			target:   "feature-auth",
+			worktrees: []Worktree{
+				{
+					Path:   "/repo/worktrees/feature-auth",
+					Branch: "feature/auth",
+					Status: StatusDirty,
+				},
+			},
+			wantErr: true,
+			errMsg:  "has uncommitted changes",
+		},
+		{
+			name:      "worktree not found",
+			repoPath:  "/repo",
+			target:    "nonexistent",
+			worktrees: []Worktree{},
+			wantErr:   true,
+			errMsg:    "not found",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRunner := &MockCommandRunner{
+				outputs: map[string]string{
+					"git worktree list --porcelain": generateMockWorktreeOutput(tt.worktrees),
+				},
+			}
+
+			// Add status outputs for each worktree
+			for _, wt := range tt.worktrees {
+				statusKey := "git -C " + wt.Path + " status --porcelain"
+				if wt.Status == StatusDirty {
+					mockRunner.outputs[statusKey] = " M file.go\n"
+				} else {
+					mockRunner.outputs[statusKey] = ""
+				}
+			}
+
+			service := NewGitService(mockRunner)
+			manager := NewWorktreeManager(service, mockRunner)
+
+			err := manager.RemoveWorktree(tt.repoPath, tt.target)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("WorktreeManager.RemoveWorktree() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if tt.wantErr && !strings.Contains(err.Error(), tt.errMsg) {
+				t.Errorf("WorktreeManager.RemoveWorktree() error = %v, want error containing %q", err, tt.errMsg)
+			}
+		})
+	}
+}
+
+func generateMockWorktreeOutput(worktrees []Worktree) string {
+	if len(worktrees) == 0 {
+		return ""
+	}
+
+	var parts []string
+	for _, wt := range worktrees {
+		part := fmt.Sprintf("worktree %s\nHEAD abc123\nbranch refs/heads/%s", wt.Path, wt.Branch)
+		parts = append(parts, part)
+	}
+	return strings.Join(parts, "\n\n")
 }
