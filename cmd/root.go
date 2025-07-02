@@ -22,5 +22,6 @@ func init() {
 	rootCmd.AddCommand(addCmd)
 	rootCmd.AddCommand(switchCmd)
 	rootCmd.AddCommand(removeCmd)
+	rootCmd.AddCommand(cleanCmd)
 	rootCmd.AddCommand(shellInitCmd)
 }
