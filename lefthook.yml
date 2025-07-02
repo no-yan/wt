@@ -1,0 +1,28 @@
+pre-commit:
+  commands:
+    fmt:
+      run: go fmt ./...
+      glob: "*.go"
+      stage_fixed: true
+    vet:
+      run: go vet ./...
+      glob: "*.go"
+    test:
+      run: go test ./...
+      glob: "*.go"
+    mod-tidy:
+      run: go mod tidy
+      glob: "*.go"
+      stage_fixed: true
+
+pre-push:
+  commands:
+    test:
+      run: go test ./...
+      glob: "*.go"
+    build:
+      run: go build -o wrkt
+      glob: "*.go"
+    lint:
+      run: golangci-lint run
+      glob: "*.go"
