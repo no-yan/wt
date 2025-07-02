@@ -82,10 +82,12 @@ func TestGitService_ListWorktrees(t *testing.T) {
 }
 
 type MockCommandRunner struct {
-	outputs map[string]string
+	outputs  map[string]string
+	commands []string
 }
 
 func (m *MockCommandRunner) Run(command string) (string, error) {
+	m.commands = append(m.commands, command)
 	if output, exists := m.outputs[command]; exists {
 		return output, nil
 	}
