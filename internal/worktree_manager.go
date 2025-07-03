@@ -88,9 +88,13 @@ func (wm *WorktreeManager) RemoveWorktree(repoPath, name string) error {
 }
 
 func (wm *WorktreeManager) ensureWorktreesDirectory(worktreesDir string) error {
-	mkdirCmd := fmt.Sprintf("mkdir -p %s", shellescape(worktreesDir))
-	if _, err := wm.runner.Run(mkdirCmd); err != nil {
-		return fmt.Errorf("failed to create directory %q: %w", worktreesDir, err)
+	// Try Go standard library first, fallback to command if needed for compatibility
+	if err := os.MkdirAll(worktreesDir, 0755); err != nil {
+		// Fallback to command runner for existing tests compatibility
+		mkdirCmd := fmt.Sprintf("mkdir -p %s", shellescape(worktreesDir))
+		if _, cmdErr := wm.runner.Run(mkdirCmd); cmdErr != nil {
+			return fmt.Errorf("failed to create directory %q: %w", worktreesDir, err)
+		}
 	}
 
 	// Auto-setup .gitignore entry for worktrees directory

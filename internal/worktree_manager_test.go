@@ -158,6 +158,104 @@ func TestWorktreeManager_AddWorktree_BranchFallback(t *testing.T) {
 	}
 }
 
+func TestWorktreeManager_AutoSetup(t *testing.T) {
+	// Test only the auto-setup functionality (directory creation + gitignore) without git commands
+	tempDir := t.TempDir()
+
+	tests := []struct {
+		name               string
+		branch             string
+		existingGitignore  string
+		wantWorktreesDir   bool
+		wantGitignoreEntry bool
+	}{
+		{
+			name:               "creates worktrees dir and gitignore entry",
+			branch:             "feature",
+			existingGitignore:  "",
+			wantWorktreesDir:   true,
+			wantGitignoreEntry: true,
+		},
+		{
+			name:               "adds gitignore entry to existing file",
+			branch:             "feature/auth",
+			existingGitignore:  "*.log\n.DS_Store\n",
+			wantWorktreesDir:   true,
+			wantGitignoreEntry: true,
+		},
+		{
+			name:               "preserves existing gitignore entry",
+			branch:             "bugfix",
+			existingGitignore:  "*.log\nworktrees/\n.DS_Store\n",
+			wantWorktreesDir:   true,
+			wantGitignoreEntry: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create test repo directory
+			testRepo := filepath.Join(tempDir, tt.name)
+			if err := os.MkdirAll(testRepo, 0755); err != nil {
+				t.Fatal(err)
+			}
+
+			// Create existing .gitignore if specified
+			gitignorePath := filepath.Join(testRepo, ".gitignore")
+			if tt.existingGitignore != "" {
+				if err := os.WriteFile(gitignorePath, []byte(tt.existingGitignore), 0644); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			// Use a real WorktreeManager but test only the auto-setup part
+			mockRunner := &MockCommandRunner{outputs: make(map[string]string)}
+			service := NewGitService(mockRunner)
+			manager := NewWorktreeManager(service, mockRunner)
+
+			// Test the auto-setup part by calling ensureWorktreesDirectory directly
+			expectedWorktreePath := GenerateWorktreePath(testRepo, tt.branch)
+			worktreesDir := filepath.Dir(expectedWorktreePath)
+
+			err := manager.ensureWorktreesDirectory(worktreesDir)
+
+			// Check results - worktrees directory should be created
+			if tt.wantWorktreesDir {
+				if _, err := os.Stat(worktreesDir); os.IsNotExist(err) {
+					t.Errorf("Expected worktrees directory to be created at %s", worktreesDir)
+				}
+			}
+
+			// Check gitignore entry
+			if tt.wantGitignoreEntry {
+				content, err := os.ReadFile(gitignorePath)
+				if err != nil {
+					t.Fatalf("Failed to read .gitignore: %v", err)
+				}
+
+				hasWorktreesEntry := false
+				lines := strings.Split(string(content), "\n")
+				for _, line := range lines {
+					if strings.TrimSpace(line) == "worktrees/" {
+						hasWorktreesEntry = true
+						break
+					}
+				}
+
+				if !hasWorktreesEntry {
+					t.Error("Expected worktrees/ entry in .gitignore, but it was not found")
+					t.Logf(".gitignore content: %q", string(content))
+				}
+			}
+
+			// Verify no unexpected errors in auto-setup
+			if err != nil {
+				t.Errorf("ensureWorktreesDirectory() failed: %v", err)
+			}
+		})
+	}
+}
+
 func TestValidateBranchName(t *testing.T) {
 	tests := []struct {
 		name    string
