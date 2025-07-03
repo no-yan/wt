@@ -117,6 +117,29 @@ else
     fail_test "Implementation doesn't properly check WRKT_OLDPWD"
 fi
 
+# Test 8: Consecutive wrkt switch - behavior (A → B → A)
+echo
+echo "Test 8: Consecutive switch - behavior"
+current_dir=$(pwd)
+info "Testing consecutive wrkt switch - commands"
+
+# Test A → B → A pattern
+result=$(zsh -c "
+export PATH='$current_dir:\$PATH'
+eval \"\$(wrkt shell-init)\" 2>/dev/null
+cd /tmp
+export WRKT_OLDPWD='/var'
+wrkt switch - >/dev/null 2>&1
+wrkt switch - >/dev/null 2>&1
+echo \"\$(pwd)\"
+")
+
+if [[ "$result" == "/tmp" ]]; then
+    pass_test "Consecutive switch - correctly toggles between locations"
+else
+    fail_test "Consecutive switch - failed to toggle (result: $result, expected: /tmp)"
+fi
+
 # Final results
 echo
 echo "======================================"

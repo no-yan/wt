@@ -29,7 +29,9 @@ function wrkt() {
         if [ "$2" = "-" ]; then
           # Handle switch to previous worktree
           if [ -n "$WRKT_OLDPWD" ]; then
+            local current_pwd="$PWD"
             cd "$WRKT_OLDPWD"
+            export WRKT_OLDPWD="$current_pwd"
           else
             echo "wrkt: no previous worktree" >&2
             return 1
