@@ -24,7 +24,7 @@ func generateZshIntegration() string {
 	return `# wrkt shell integration for zsh
 function wrkt() {
   case "$1" in
-    switch)
+    switch|sw)
       if [ $# -eq 2 ]; then
         if [ "$2" = "-" ]; then
           # Handle switch to previous worktree
@@ -71,17 +71,26 @@ function _wrkt_completion() {
       _values 'commands' \
         'add[Add a new worktree]' \
         'list[List all worktrees]' \
+        'ls[List all worktrees (alias)]' \
         'switch[Switch to a worktree]' \
+        'sw[Switch to a worktree (alias)]' \
+        'remove[Remove a worktree]' \
+        'rm[Remove a worktree (alias)]' \
         'shell-init[Generate shell integration]' \
         'help[Help about any command]'
       ;;
     args)
       case $words[2] in
-        switch)
+        switch|sw)
           local worktrees
           worktrees=($(command wrkt list 2>/dev/null | cut -f1))
           # Add the previous worktree option
           worktrees+=("-")
+          _values 'worktrees' $worktrees
+          ;;
+        remove|rm)
+          local worktrees
+          worktrees=($(command wrkt list 2>/dev/null | cut -f1))
           _values 'worktrees' $worktrees
           ;;
         add)
