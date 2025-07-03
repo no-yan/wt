@@ -94,12 +94,25 @@ func (wm *WorktreeManager) ensureWorktreesDirectory(worktreesDir string) error {
 }
 
 func (wm *WorktreeManager) addGitWorktree(repoPath, worktreePath, branch string) error {
+	// Try to create a new branch first, then add worktree
+	createBranchCmd := fmt.Sprintf("git -C %s branch %s",
+		shellescape(repoPath),
+		shellescape(branch))
+
+	// Attempt to create new branch (will fail if branch already exists)
+	_, createErr := wm.runner.Run(createBranchCmd)
+
+	// Now try to add worktree (works with both new and existing branches)
 	gitCmd := fmt.Sprintf("git -C %s worktree add %s %s",
 		shellescape(repoPath),
 		shellescape(worktreePath),
 		shellescape(branch))
 
 	if _, err := wm.runner.Run(gitCmd); err != nil {
+		if createErr != nil {
+			// Both branch creation and worktree add failed
+			return fmt.Errorf("git worktree add failed (branch %s might not exist): %w", branch, err)
+		}
 		return fmt.Errorf("git worktree add failed: %w", err)
 	}
 	return nil
