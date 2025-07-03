@@ -1,5 +1,4 @@
 # Worktrees directory
-worktrees/
 
 # Binary
 wrkt
@@ -19,3 +18,4 @@ wrkt-*
 # OS files
 .DS_Store
 Thumbs.db
+worktrees/
