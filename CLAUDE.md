@@ -148,8 +148,8 @@ validate_dogfooding
 🚫 **DANGER**: "Quick switch to..." → git checkout
 ✅ **SAFE**: "Let me validate first" → pre-command check
 
-🚫 **DANGER**: Multiple concurrent tasks
-✅ **SAFE**: Sequential task completion
+🚫 **DANGER**: Multiple tasks in same worktree
+✅ **SAFE**: Parallel tasks in isolated worktrees
 
 ## 📋 CRITICAL DEVELOPMENT RULES
 
@@ -161,6 +161,7 @@ validate_dogfooding
 
 ### MANDATORY: Session State Management
 - Always maintain `.claude/SESSION.md` with current tasks and progress
+- Support multi-task parallel development via task isolation
 - Document system constraints and blockers
 - Record today's accomplishments and next actions for continuity
 
@@ -214,3 +215,22 @@ validate_dogfooding
 - Update todo lists frequently using TodoWrite/TodoRead tools
 - Document new insights and patterns for future sessions
 - Ensure clear handoff information for session continuity
+
+## 📋 DOCUMENT UPDATE GUIDELINES
+
+### Before Any Update
+1. **Information Placement**: Where does this belong? (CLAUDE.md/WORKFLOWS.md/SESSION.md/tasks/)
+2. **Redundancy Check**: Does this create duplicate information?
+3. **Cognitive Load**: Will this make information harder to find?
+4. **Access Pattern**: Does this match actual usage frequency?
+
+### Design Principles
+- **Single Responsibility**: One source of truth per information type
+- **Progressive Disclosure**: Overview → Procedure → Details
+- **Information Density**: 1 file = 1 screen, minimize scrolling
+- **Maintenance**: Separate static from dynamic content
+
+### Update Validation
+- **Findability Test**: Can target info be found in <2 minutes?
+- **Consistency**: Same terms and formats for similar content?
+- **Scalability**: Will this work with more information/users?

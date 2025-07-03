@@ -398,3 +398,118 @@ go test ./internal -v -run TestWorktreeManager
 4. **Test**: Verify fix and ensure no regressions
 5. **Document**: Clear commit message explaining the fix
 6. **Fast-track**: Priority PR creation and review
+
+## 🔄 PARALLEL TASK MANAGEMENT
+
+### Multi-Task Session Setup
+
+**Task Creation Process**:
+1. **Check Capacity**: Verify <3 concurrent tasks in SESSION.md
+2. **Create Worktree**: `./wrkt add feature/task-name`
+3. **Create Task File**: Copy `.claude/tasks/TASK_TEMPLATE.md` → `TASK_XXX_name.md`
+4. **Update SESSION.md**: Add task to Active Tasks Matrix
+5. **Assign Priority**: Set task priority and dependencies
+
+### Task Monitoring & Coordination
+
+**Master Claude Responsibilities**:
+- Monitor all active tasks via SESSION.md matrix
+- Resolve inter-task dependencies and conflicts
+- Coordinate PR integration sequence
+- Handle escalations from task-specific Claude instances
+
+**Task-Specific Claude Responsibilities**:
+- Focus exclusively on assigned task and worktree
+- Update task file every 30 minutes with progress
+- Escalate blockers immediately to master
+- Never switch to different worktrees or tasks
+
+### Task Integration Workflow
+
+**PR Integration Sequence**:
+1. **Dependency Check**: Verify prerequisite tasks completed
+2. **Conflict Analysis**: Check for file overlap conflicts
+3. **Sequential Merge**: Integrate PRs one at a time
+4. **Integration Testing**: Run full test suite after each merge
+5. **Task Cleanup**: Remove completed task files and worktrees
+
+### Parallel Development Safety
+
+**Isolation Requirements**:
+- Each task must use dedicated worktree
+- No shared file editing between tasks
+- All task communication via SESSION.md updates
+- Master Claude coordinates all cross-task activities
+
+**Conflict Prevention**:
+- Check file overlap before task assignment
+- Prioritize tasks with potential conflicts
+- Use feature flags for incompatible changes
+- Maintain clear task scope boundaries
+
+## 📐 DOCUMENTATION MAINTENANCE
+
+### File-Specific Update Guidelines
+
+**CLAUDE.md Updates**:
+- **Target**: Ultra-high frequency information only
+- **Line Limit**: Keep under 250 lines total
+- **Content**: Session checklist, rules, core patterns
+- **Avoid**: Detailed procedures, examples, changing information
+
+**WORKFLOWS.md Updates**:
+- **Target**: Operational procedures and templates
+- **Structure**: Templates → Procedures → Troubleshooting
+- **Cross-Reference**: Link to CLAUDE.md for rules
+- **Practical Focus**: Real workflow steps and examples
+
+**SESSION.md Updates**:
+- **Frequency**: Continuous during session
+- **Content**: Current state, progress, insights, next actions
+- **Archival**: Summarize completed work, detail current focus
+- **Handoff**: Clear next session starting points
+
+**Task Files (.claude/tasks/TASK_XXX.md)**:
+- **Size Limit**: Maximum 15 lines
+- **Content**: Task-specific context, progress, next actions
+- **References**: Link to WORKFLOWS.md for procedures
+- **Lifecycle**: Create → Update → Archive/Delete on completion
+
+### Information Architecture Best Practices
+
+**Redundancy Management**:
+```markdown
+❌ Bad: Same information in multiple files
+✅ Good: Single source with references
+✅ Best: "Procedure: WORKFLOWS.md#section-name"
+```
+
+**Access Optimization**:
+- **Level 1**: Immediate needs (CLAUDE.md)
+- **Level 2**: Working procedures (WORKFLOWS.md)  
+- **Level 3**: Current state (SESSION.md)
+- **Level 4**: Task specifics (tasks/*.md)
+
+**Visual Hierarchy**:
+```markdown
+# Main Purpose (1 per file)
+## Functional Sections (grouped by purpose)
+### Detailed Categories (when needed)
+**Emphasis**: For critical points
+- Lists: For parallel information
+```
+
+### Quality Assurance Checklist
+
+**Before Publishing Updates**:
+- [ ] Information placed in correct file by frequency
+- [ ] No duplicate content across files
+- [ ] References properly formatted and working
+- [ ] Visual hierarchy maintained
+- [ ] Line limits respected per file type
+
+**After Updates**:
+- [ ] Information findable within 2 minutes
+- [ ] Consistent terminology used
+- [ ] Navigation paths remain clear
+- [ ] File purpose boundaries maintained
