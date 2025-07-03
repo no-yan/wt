@@ -139,7 +139,6 @@ func TestWorktreeManager_AddWorktree_BranchFallback(t *testing.T) {
 
 			// Setup worktree add command (always succeeds)
 			mockRunner.outputs["git -C "+tt.repoPath+" worktree add "+tt.wantPath+" "+tt.branch] = ""
-
 			service := NewGitService(mockRunner)
 			manager := NewWorktreeManager(service, mockRunner)
 
@@ -324,6 +323,16 @@ func TestWorktreeManager_RemoveWorktree(t *testing.T) {
 				}
 			}
 
+			// Add remove command mock for successful cases
+			if !tt.wantErr {
+				for _, wt := range tt.worktrees {
+					if wt.Name() == tt.target {
+						mockRunner.outputs["git -C "+tt.repoPath+" worktree remove "+wt.Path] = ""
+						break
+					}
+				}
+			}
+
 			service := NewGitService(mockRunner)
 			manager := NewWorktreeManager(service, mockRunner)
 
@@ -367,8 +376,8 @@ func TestWorktreeManager_EnsureGitignoreEntry(t *testing.T) {
 			repoRoot:      "/repo",
 			existingEntry: false,
 			wantCommands: []string{
-				"grep -q '^worktrees/$' '/repo/.gitignore'",
-				"echo 'worktrees/' >> '/repo/.gitignore'",
+				"grep -q '^worktrees/$' /repo/.gitignore",
+				"echo 'worktrees/' >> /repo/.gitignore",
 			},
 			wantErr: false,
 		},
@@ -377,7 +386,7 @@ func TestWorktreeManager_EnsureGitignoreEntry(t *testing.T) {
 			repoRoot:      "/repo",
 			existingEntry: true,
 			wantCommands: []string{
-				"grep -q '^worktrees/$' '/repo/.gitignore'",
+				"grep -q '^worktrees/$' /repo/.gitignore",
 			},
 			wantErr: false,
 		},
@@ -390,13 +399,13 @@ func TestWorktreeManager_EnsureGitignoreEntry(t *testing.T) {
 			}
 
 			// Setup mock responses
-			grepCmd := "grep -q '^worktrees/$' '/repo/.gitignore'"
+			grepCmd := "grep -q '^worktrees/$' /repo/.gitignore"
 			if tt.existingEntry {
 				mockRunner.outputs[grepCmd] = ""
 			} else {
 				// Don't add grep command to outputs so it will return error
 				// Add the echo command to outputs so it succeeds
-				mockRunner.outputs["echo 'worktrees/' >> '/repo/.gitignore'"] = ""
+				mockRunner.outputs["echo 'worktrees/' >> /repo/.gitignore"] = ""
 			}
 
 			service := NewGitService(mockRunner)
