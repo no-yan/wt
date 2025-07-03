@@ -16,8 +16,9 @@ var (
 )
 
 var listCmd = &cobra.Command{
-	Use:   "list",
-	Short: "List all worktrees",
+	Use:     "list",
+	Aliases: []string{"ls"},
+	Short:   "List all worktrees",
 	Long: `List all git worktrees with their status and branch information.
 
 Filtering options:

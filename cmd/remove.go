@@ -9,8 +9,9 @@ import (
 )
 
 var removeCmd = &cobra.Command{
-	Use:   "remove <name>",
-	Short: "Remove a worktree",
+	Use:     "remove <name>",
+	Aliases: []string{"rm"},
+	Short:   "Remove a worktree",
 	Long: `Remove a worktree by name.
 
 Safety checks:
