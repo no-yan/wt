@@ -1,121 +1,236 @@
 # Claude Implementation Context
 
-This document contains **Claude-specific instructions** for implementing and maintaining the `wrkt` project.
+- [Claude Implementation Context](#claude-implementation-context)
+  - [🎯 SESSION START CHECKLIST (MANDATORY - RUN FIRST)](#-session-start-checklist-mandatory---run-first)
+  - [🚨🚨🚨 THE THREE COMMANDMENTS - NEVER VIOLATE 🚨🚨🚨](#-the-three-commandments---never-violate-)
+    - [COMMANDMENT 1: THOU SHALT NOT use `git checkout` or `git switch` in main directory](#commandment-1-thou-shalt-not-use-git-checkout-or-git-switch-in-main-directory)
+    - [COMMANDMENT 2: THOU SHALT NOT change branches within any worktree](#commandment-2-thou-shalt-not-change-branches-within-any-worktree)
+    - [COMMANDMENT 3: THOU SHALT use wrkt commands for ALL branch/worktree operations](#commandment-3-thou-shalt-use-wrkt-commands-for-all-branchworktree-operations)
+  - [🔒 MANDATORY PRE-COMMAND VALIDATION](#-mandatory-pre-command-validation)
+  - [🚨 EMERGENCY PROCEDURES](#-emergency-procedures)
+    - [If Dogfooding Violation Detected](#if-dogfooding-violation-detected)
+    - [If Tools Fail](#if-tools-fail)
+  - [🧠 CORE COGNITIVE PATTERNS](#-core-cognitive-patterns)
+    - [Mental Model: Worktree-First Thinking](#mental-model-worktree-first-thinking)
+    - [Decision Framework](#decision-framework)
+    - [Pattern Recognition](#pattern-recognition)
+  - [📋 CRITICAL DEVELOPMENT RULES](#-critical-development-rules)
+    - [MANDATORY: TodoWrite/TodoRead Usage](#mandatory-todowritetodoread-usage)
+    - [MANDATORY: Session State Management](#mandatory-session-state-management)
+    - [MANDATORY: Dogfooding Principles](#mandatory-dogfooding-principles)
+  - [🏗️ PROJECT IMPLEMENTATION NOTES](#️-project-implementation-notes)
+    - [Worktree Management](#worktree-management)
+    - [Zsh Integration](#zsh-integration)
+    - [Command Design Principles](#command-design-principles)
+  - [🔗 NAVIGATION GUIDE](#-navigation-guide)
+  - [📝 IMPORTANT REMINDERS](#-important-reminders)
+    - [Development Guidelines](#development-guidelines)
+    - [Session State Tracking](#session-state-tracking)
 
-## 🚨 CRITICAL DEVELOPMENT RULES
+## 🎯 SESSION START CHECKLIST (MANDATORY - RUN FIRST)
+
+**Before ANY development work, Claude MUST execute these steps:**
+
+```bash
+# 1. Check current location and branch
+pwd
+git branch --show-current
+
+# 2. If in main directory with wrong branch, fix immediately
+if [[ $(pwd) == */wrkt ]] && [[ $(git branch --show-current) != "main" ]]; then
+    echo "🚨 CRITICAL: Main directory on wrong branch - fixing now"
+    git checkout main
+fi
+
+# 3. Read current session context
+cat .claude/SESSION.md
+
+# 4. List all worktrees to understand project state
+./wrkt list --verbose
+
+# 5. Confirm understanding
+echo "✅ Session initialized - ready to proceed with development"
+```
+
+**Next Steps After Checklist:**
+- Update `.claude/SESSION.md` with your current task
+- Follow sequential task management (one worktree at a time)
+- Use workflows from `.claude/WORKFLOWS.md` for complex operations
+
+---
+
+## 🚨🚨🚨 THE THREE COMMANDMENTS - NEVER VIOLATE 🚨🚨🚨
+
+### COMMANDMENT 1: THOU SHALT NOT use `git checkout` or `git switch` in main directory
+### COMMANDMENT 2: THOU SHALT NOT change branches within any worktree
+### COMMANDMENT 3: THOU SHALT use wrkt commands for ALL branch/worktree operations
+
+## 🔒 MANDATORY PRE-COMMAND VALIDATION
+
+**COPY AND RUN THIS BEFORE EVERY GIT OPERATION:**
+
+```bash
+#!/bin/bash
+# DOGFOODING VALIDATION - RUN BEFORE ANY GIT COMMAND
+validate_dogfooding() {
+    local current_dir=$(pwd)
+    local current_branch=$(git branch --show-current 2>/dev/null || echo "unknown")
+
+    echo "📍 Current location: $current_dir"
+    echo "🌿 Current branch: $current_branch"
+
+    # Check if in main directory with wrong branch
+    if [[ "$current_dir" == */wrkt ]] && [[ "$current_branch" != "main" ]]; then
+        echo "❌ CRITICAL VIOLATION: Main directory on wrong branch!"
+        echo "🔧 Required fix: git checkout main"
+        echo "⚠️  Future operations: Use worktrees only"
+        return 1
+    fi
+
+    # Check for prohibited commands
+    read -p "Enter your intended git command: " git_command
+    if [[ "$git_command" =~ "checkout -b" ]] || [[ "$git_command" =~ "switch -c" ]]; then
+        echo "❌ PROHIBITED COMMAND: $git_command"
+        echo "✅ Use instead: ./wrkt add <branch-name>"
+        return 1
+    fi
+
+    if [[ "$git_command" =~ "checkout" ]] || [[ "$git_command" =~ "switch" ]]; then
+        if [[ "$current_dir" == */wrkt ]]; then
+            echo "❌ PROHIBITED: No branch switching in main directory"
+            echo "✅ Use instead: ./wrkt switch <worktree-name>"
+            return 1
+        fi
+    fi
+
+    echo "✅ Validation passed - command allowed"
+    return 0
+}
+
+# Run validation
+validate_dogfooding
+```
+
+## 🚨 EMERGENCY PROCEDURES
+
+### If Dogfooding Violation Detected
+1. **STOP** all operations immediately
+2. **Assess state**: `./wrkt list --verbose`
+3. **Fix main directory**: `git checkout main` if needed
+4. **Document lesson**: Update `.claude/SESSION.md`
+5. **Restart properly**: Follow session checklist
+
+### If Tools Fail
+1. **New Session**: Often resolves tool issues
+2. **Manual Mode**: Use procedures from `.claude/WORKFLOWS.md`
+3. **Document Constraint**: Note in `.claude/SESSION.md`
+
+## 🧠 CORE COGNITIVE PATTERNS
+
+### Mental Model: Worktree-First Thinking
+
+**WRONG** (causes failures): "Git repository with worktree rules to remember"
+**CORRECT** (prevents failures): "Worktree-managed codebase where Git is an implementation detail"
+
+### Decision Framework
+
+**Before ANY command:**
+1. **LOCATION**: Where am I? (Main directory or worktree?)
+2. **OPERATION**: What do I want? (New branch → `wrkt add`, Switch → `wrkt switch`)
+3. **CONSTRAINT**: Does this violate the three commandments?
+4. **ALTERNATIVE**: What's the wrkt way to achieve this?
+
+### Pattern Recognition
+
+🚫 **DANGER**: "I need to create a branch" → git checkout -b
+✅ **SAFE**: "I need a new workspace" → wrkt add
+
+🚫 **DANGER**: "Quick switch to..." → git checkout
+✅ **SAFE**: "Let me validate first" → pre-command check
+
+🚫 **DANGER**: Multiple tasks in same worktree
+✅ **SAFE**: Parallel tasks in isolated worktrees
+
+## 📋 CRITICAL DEVELOPMENT RULES
 
 ### MANDATORY: TodoWrite/TodoRead Usage
-**Before starting ANY development work, Claude MUST:**
 1. **Read Current Todo List**: Use `TodoRead` tool to check existing tasks
-2. **Plan Work**: Use `TodoWrite` tool to create/update task list for the session
-3. **Track Progress**: Update todo status throughout development:
-   - `"pending"` - Task not yet started
-   - `"in_progress"` - Currently working on (limit to ONE at a time)
-   - `"completed"` - Task finished successfully
+2. **Plan Work**: Use `TodoWrite` tool to create/update task list
+3. **Track Progress**: Update status throughout development (pending → in_progress → completed)
 4. **Mark Completion**: IMMEDIATELY mark tasks as completed when finished
 
+### MANDATORY: Session State Management
+- Always maintain `.claude/SESSION.md` with current tasks and progress
+- Support multi-task parallel development via task isolation
+- Document system constraints and blockers
+- Record today's accomplishments and next actions for continuity
+
 ### MANDATORY: Dogfooding Principles
-**Absolute Rules to Follow:**
-- **Always use wrkt commands for worktree operations**
-- **Prohibit direct branch operations in main directory**
-- **Prohibit branch switching within existing worktrees**
-
-**Correct Operation Procedure:**
-1. `./wrkt add <branch>` to create worktree
-2. `./wrkt switch <name>` to move (auto-cd after shell integration implementation, manual cd before)
-3. Work only within worktrees, no branch changes
-4. Always check status with `./wrkt list --verbose` at session start
-
-**Prohibited Operations:**
-```bash
-# ❌ Prohibited: Feature branch work in main directory
-git checkout -b feature/new-feature
-
-# ❌ Prohibited: Branch switching within worktrees
-cd /path/to/worktree && git checkout other-branch
-
-# ✅ Correct: Create worktree with wrkt command
-./wrkt add feature/new-feature
-```
+- **Always use wrkt commands** for worktree operations
+- **Prohibit direct branch operations** in main directory
+- **Prohibit branch switching** within existing worktrees
 
 **Design Philosophy:**
-- **1 worktree = 1 dedicated branch = 1 feature**
-- **Main directory = main branch only**
-- **Realize branch switching through worktree creation**
+- 1 worktree = 1 dedicated branch = 1 feature
+- Main directory = main branch only
+- Realize branch switching through worktree creation
 
-## 📊 TASK MANAGEMENT
+## 🏗️ PROJECT IMPLEMENTATION NOTES
 
-### Parallel Development Manager Responsibilities
-**When acting as manager for multiple Claude agents working on different worktrees:**
+### Worktree Management
+- **Organization**: All worktrees in `$REPO_ROOT/worktrees/` subdirectory
+- **Auto-setup**: Auto-create directory and add to .gitignore on first use
+- **Naming**: `feature/auth` → `worktrees/feature-auth/`
+- **Isolation**: 1 worktree = 1 branch = 1 feature
 
-1. **Conflict Prevention**: Analyze all feature branches before assigning tasks to prevent merge conflicts
-2. **Priority-Based Coordination**: Pause lower priority work when conflicts are detected
-3. **Sequential Integration**: Merge features one-by-one in dependency order
-4. **Test Validation**: Ensure ALL tests pass before any merge attempt
-5. **Rollback Strategy**: Abort merges immediately if tests fail
-6. **Documentation Updates**: Record all coordination decisions and conflicts in CLAUDE.md
+### Zsh Integration
+- **Command Role**: `wrkt switch` resolves and returns target path
+- **Shell Role**: Zsh functions handle actual directory changing
+- **Setup**: Generated by `wrkt shell-init`, zsh-only support
+- **Tab Completion**: Integrated with zsh completion system
 
-**Conflict Resolution Protocol:**
-- Run `git diff f0c4919..branch --name-only` to analyze file changes
-- Stop development on conflicting features until higher priority merges complete
-- Coordinate timing of commits to avoid simultaneous changes to same files
-- Always test merges in clean environment before final integration
+### Command Design Principles
+- **Primary Info**: `wrkt list` shows all worktrees
+- **Detailed View**: `wrkt list --verbose` for git status
+- **Status Check**: `wrkt list --dirty` for uncommitted changes
+- **Exact Matching**: No fuzzy matching to avoid complexity
 
-**GitHub PR Integration Process:**
-- Use GitHub Pull Requests for all feature merges instead of direct git merge
-- Create PRs using `gh pr create` with proper titles and descriptions
-- Ensure all tests pass in PR before merging
-- Use PR reviews to validate changes before integration
-- Merge PRs sequentially to prevent conflicts
+## 🔗 NAVIGATION GUIDE
 
-### Worktree Development Workflow
-**When working across multiple worktrees:**
+**For operational procedures**: See `.claude/WORKFLOWS.md`
+**For current session status**: See `.claude/SESSION.md`
+**For quick reference**: This file (CLAUDE.md)
 
-1. **Check WORKTREE_TRACKING.md** - Review status of all active worktrees
-2. **Use TodoWrite** to plan which worktrees to work on
-3. **Work systematically** - Complete one worktree before moving to next
-4. **Update tracking documents** when switching between worktrees
-5. **Commit frequently** with descriptive messages
+## 📝 IMPORTANT REMINDERS
 
-### Task Categories
-- **High Priority**: Core functionality, bug fixes, incomplete features
-- **Medium Priority**: Enhancements, new features, optimizations
-- **Low Priority**: Documentation, cleanup, nice-to-have features
+### Development Guidelines
+- Do what has been asked; nothing more, nothing less
+- NEVER create files unless absolutely necessary
+- ALWAYS prefer editing existing files over creating new ones
+- NEVER proactively create documentation files
+- Only create documentation files if explicitly requested
 
-### Example Todo Usage
-```
-TodoWrite: [
-  {"content": "Complete feature-list-filters worktree", "status": "in_progress", "priority": "high", "id": "1"},
-  {"content": "Add zsh tab completion", "status": "pending", "priority": "medium", "id": "2"},
-  {"content": "Update documentation", "status": "pending", "priority": "low", "id": "3"}
-]
-```
+### Session State Tracking
+- Always maintain `.claude/SESSION.md` with current progress
+- Update todo lists frequently using TodoWrite/TodoRead tools
+- Document new insights and patterns for future sessions
+- Ensure clear handoff information for session continuity
 
-## 🏗️ CORE IMPLEMENTATION NOTES
+## 📋 DOCUMENT UPDATE GUIDELINES
 
-### Worktree Organization
-- All worktrees created in `$REPO_ROOT/worktrees/` subdirectory
-- Auto-create worktrees/ directory on first use
-- Auto-add "worktrees/" to .gitignore
-- Path generation: `feature/auth` → `worktrees/feature-auth/`
+### Before Any Update
+1. **Information Placement**: Where does this belong? (CLAUDE.md/WORKFLOWS.md/SESSION.md/tasks/)
+2. **Redundancy Check**: Does this create duplicate information?
+3. **Cognitive Load**: Will this make information harder to find?
+4. **Access Pattern**: Does this match actual usage frequency?
 
-### Zsh Integration Implementation
-- `wrkt switch` command should only resolve and return the target path
-- Actual directory changing is handled by zsh functions
-- Zsh functions must be generated by `wrkt shell-init`
-- Only support zsh - show clear error for other shells
+### Design Principles
+- **Single Responsibility**: One source of truth per information type
+- **Progressive Disclosure**: Overview → Procedure → Details
+- **Information Density**: 1 file = 1 screen, minimize scrolling
+- **Maintenance**: Separate static from dynamic content
 
-### Command Design
-- `wrkt list` is the primary information command
-- No separate `wrkt status` - use `wrkt list --dirty` instead
-- `wrkt list --verbose` provides detailed git status
-- **Exact name matching only** - no fuzzy matching complexity
-
-## Troubleshooting Common Issues
-
-- **"wrkt switch doesn't change directory"**: User hasn't set up zsh integration
-- **"shell not supported"**: User not using zsh
-- **"command not found" after switch**: Zsh integration not loaded
-- **"worktree not found"**: Check exact name with `wrkt list`
-- **Path generation conflicts**: Simple conflict resolution with numbering
-- **Tab completion not working**: Zsh integration setup incomplete
+### Update Validation
+- **Findability Test**: Can target info be found in <2 minutes?
+- **Consistency**: Same terms and formats for similar content?
+- **Scalability**: Will this work with more information/users?
