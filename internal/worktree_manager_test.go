@@ -64,6 +64,82 @@ func TestWorktreeManager_AddWorktree(t *testing.T) {
 				outputs: make(map[string]string),
 			}
 
+			// Setup successful mock responses for auto-setup commands when not expecting error
+			if !tt.wantErr {
+				// Mock mkdir command
+				mockRunner.outputs["mkdir -p "+tt.repoPath+"/worktrees"] = ""
+				// Mock gitignore commands
+				mockRunner.outputs["echo 'worktrees/' >> "+tt.repoPath+"/.gitignore"] = ""
+				// Mock git branch creation command (try to create new branch)
+				mockRunner.outputs["git -C "+tt.repoPath+" branch "+tt.branch] = ""
+				// Mock git worktree add command
+				mockRunner.outputs["git -C "+tt.repoPath+" worktree add "+tt.wantPath+" "+tt.branch] = ""
+			}
+
+			service := NewGitService(mockRunner)
+			manager := NewWorktreeManager(service, mockRunner)
+
+			gotPath, err := manager.AddWorktree(tt.repoPath, tt.branch)
+
+			if (err != nil) != tt.wantErr {
+				t.Errorf("WorktreeManager.AddWorktree() error = %v, wantErr %v", err, tt.wantErr)
+				return
+			}
+
+			if gotPath != tt.wantPath {
+				t.Errorf("WorktreeManager.AddWorktree() path = %v, want %v", gotPath, tt.wantPath)
+			}
+		})
+	}
+}
+
+func TestWorktreeManager_AddWorktree_BranchFallback(t *testing.T) {
+	tests := []struct {
+		name         string
+		repoPath     string
+		branch       string
+		branchExists bool
+		wantPath     string
+		wantErr      bool
+	}{
+		{
+			name:         "create new branch successfully",
+			repoPath:     "/repo",
+			branch:       "new-feature",
+			branchExists: false,
+			wantPath:     "/repo/worktrees/new-feature",
+			wantErr:      false,
+		},
+		{
+			name:         "use existing branch when creation fails",
+			repoPath:     "/repo",
+			branch:       "existing-feature",
+			branchExists: true,
+			wantPath:     "/repo/worktrees/existing-feature",
+			wantErr:      false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			mockRunner := &MockCommandRunner{
+				outputs: make(map[string]string),
+			}
+
+			// Setup auto-setup commands
+			mockRunner.outputs["mkdir -p "+tt.repoPath+"/worktrees"] = ""
+			mockRunner.outputs["echo 'worktrees/' >> "+tt.repoPath+"/.gitignore"] = ""
+
+			// Setup branch creation command - add to outputs only if branch doesn't exist
+			branchCmd := "git -C " + tt.repoPath + " branch " + tt.branch
+			if !tt.branchExists {
+				mockRunner.outputs[branchCmd] = ""
+			}
+			// If branch exists, don't add the command to outputs so it fails
+
+			// Setup worktree add command (always succeeds)
+			mockRunner.outputs["git -C "+tt.repoPath+" worktree add "+tt.wantPath+" "+tt.branch] = ""
+
 			service := NewGitService(mockRunner)
 			manager := NewWorktreeManager(service, mockRunner)
 
