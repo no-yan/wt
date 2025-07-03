@@ -1,7 +1,9 @@
 package internal
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -104,17 +106,58 @@ func (wm *WorktreeManager) ensureWorktreesDirectory(worktreesDir string) error {
 func (wm *WorktreeManager) ensureGitignoreEntry(repoRoot string) error {
 	gitignorePath := filepath.Join(repoRoot, ".gitignore")
 
-	// Check if .gitignore already contains worktrees/ entry
-	checkCmd := fmt.Sprintf("grep -q '^worktrees/$' %s", shellescape(gitignorePath))
-	if _, err := wm.runner.Run(checkCmd); err == nil {
-		// Entry already exists
-		return nil
+	// Read .gitignore file and check if worktrees/ entry exists
+	file, err := os.Open(gitignorePath)
+	if err != nil {
+		// If .gitignore doesn't exist, create it with worktrees/ entry
+		if os.IsNotExist(err) {
+			return wm.createGitignoreWithEntry(gitignorePath)
+		}
+		return fmt.Errorf("failed to open .gitignore: %w", err)
+	}
+	defer file.Close()
+
+	// Check each line for worktrees/ entry
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		if line == "worktrees/" {
+			// Entry already exists
+			return nil
+		}
 	}
 
-	// Add worktrees/ entry to .gitignore
-	addCmd := fmt.Sprintf("echo 'worktrees/' >> %s", shellescape(gitignorePath))
-	if _, err := wm.runner.Run(addCmd); err != nil {
-		return fmt.Errorf("failed to add worktrees/ to .gitignore: %w", err)
+	if err := scanner.Err(); err != nil {
+		return fmt.Errorf("failed to read .gitignore: %w", err)
+	}
+
+	// Entry not found, add it
+	return wm.appendToGitignore(gitignorePath)
+}
+
+func (wm *WorktreeManager) createGitignoreWithEntry(gitignorePath string) error {
+	file, err := os.Create(gitignorePath)
+	if err != nil {
+		return fmt.Errorf("failed to create .gitignore: %w", err)
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString("worktrees/\n"); err != nil {
+		return fmt.Errorf("failed to write to .gitignore: %w", err)
+	}
+
+	return nil
+}
+
+func (wm *WorktreeManager) appendToGitignore(gitignorePath string) error {
+	file, err := os.OpenFile(gitignorePath, os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		return fmt.Errorf("failed to open .gitignore for append: %w", err)
+	}
+	defer file.Close()
+
+	if _, err := file.WriteString("worktrees/\n"); err != nil {
+		return fmt.Errorf("failed to append to .gitignore: %w", err)
 	}
 
 	return nil

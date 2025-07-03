@@ -2,6 +2,8 @@ package internal
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 )
@@ -364,66 +366,83 @@ func generateMockWorktreeOutput(worktrees []Worktree) string {
 }
 
 func TestWorktreeManager_EnsureGitignoreEntry(t *testing.T) {
+	// Create temporary directory for test files
+	tempDir := t.TempDir()
+
 	tests := []struct {
-		name          string
-		repoRoot      string
-		existingEntry bool
-		wantCommands  []string
-		wantErr       bool
+		name             string
+		gitignoreContent string
+		expectAppend     bool
+		wantErr          bool
 	}{
 		{
-			name:          "add new gitignore entry",
-			repoRoot:      "/repo",
-			existingEntry: false,
-			wantCommands: []string{
-				"grep -q '^worktrees/$' /repo/.gitignore",
-				"echo 'worktrees/' >> /repo/.gitignore",
-			},
-			wantErr: false,
+			name:             "add entry to existing gitignore without worktrees entry",
+			gitignoreContent: "*.log\n.DS_Store\n",
+			expectAppend:     true,
+			wantErr:          false,
 		},
 		{
-			name:          "entry already exists",
-			repoRoot:      "/repo",
-			existingEntry: true,
-			wantCommands: []string{
-				"grep -q '^worktrees/$' /repo/.gitignore",
-			},
-			wantErr: false,
+			name:             "entry already exists",
+			gitignoreContent: "*.log\nworktrees/\n.DS_Store\n",
+			expectAppend:     false,
+			wantErr:          false,
+		},
+		{
+			name:             "gitignore file does not exist",
+			gitignoreContent: "",
+			expectAppend:     false, // Will create new file
+			wantErr:          false,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockRunner := &MockCommandRunner{
-				outputs: make(map[string]string),
+			// Create test directory
+			testDir := filepath.Join(tempDir, tt.name)
+			if err := os.MkdirAll(testDir, 0755); err != nil {
+				t.Fatal(err)
 			}
 
-			// Setup mock responses
-			grepCmd := "grep -q '^worktrees/$' /repo/.gitignore"
-			if tt.existingEntry {
-				mockRunner.outputs[grepCmd] = ""
-			} else {
-				// Don't add grep command to outputs so it will return error
-				// Add the echo command to outputs so it succeeds
-				mockRunner.outputs["echo 'worktrees/' >> /repo/.gitignore"] = ""
+			gitignorePath := filepath.Join(testDir, ".gitignore")
+
+			// Create .gitignore file if content is provided
+			if tt.gitignoreContent != "" {
+				if err := os.WriteFile(gitignorePath, []byte(tt.gitignoreContent), 0644); err != nil {
+					t.Fatal(err)
+				}
+			}
+
+			mockRunner := &MockCommandRunner{
+				outputs: make(map[string]string),
 			}
 
 			service := NewGitService(mockRunner)
 			manager := NewWorktreeManager(service, mockRunner)
 
-			err := manager.ensureGitignoreEntry(tt.repoRoot)
+			err := manager.ensureGitignoreEntry(testDir)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ensureGitignoreEntry() error = %v, wantErr %v", err, tt.wantErr)
+				return
 			}
 
-			// Check that expected commands were run
-			if !tt.existingEntry && len(mockRunner.commands) < 2 {
-				t.Errorf("ensureGitignoreEntry() expected at least 2 commands, got %d: %v",
-					len(mockRunner.commands), mockRunner.commands)
-			} else if tt.existingEntry && len(mockRunner.commands) < 1 {
-				t.Errorf("ensureGitignoreEntry() expected at least 1 command, got %d: %v",
-					len(mockRunner.commands), mockRunner.commands)
+			// Verify .gitignore content
+			content, err := os.ReadFile(gitignorePath)
+			if err != nil {
+				t.Fatalf("Failed to read .gitignore: %v", err)
+			}
+
+			lines := strings.Split(string(content), "\n")
+			hasWorktreesEntry := false
+			for _, line := range lines {
+				if strings.TrimSpace(line) == "worktrees/" {
+					hasWorktreesEntry = true
+					break
+				}
+			}
+
+			if !hasWorktreesEntry {
+				t.Error("Expected worktrees/ entry in .gitignore, but it was not found")
 			}
 		})
 	}
