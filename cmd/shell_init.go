@@ -26,12 +26,25 @@ function wrkt() {
   case "$1" in
     switch)
       if [ $# -eq 2 ]; then
-        local target_path
-        target_path=$(command wrkt switch "$2" 2>/dev/null)
-        if [ $? -eq 0 ] && [ -n "$target_path" ]; then
-          cd "$target_path"
+        if [ "$2" = "-" ]; then
+          # Handle switch to previous worktree
+          if [ -n "$WRKT_OLDPWD" ]; then
+            cd "$WRKT_OLDPWD"
+          else
+            echo "wrkt: no previous worktree" >&2
+            return 1
+          fi
         else
-          command wrkt switch "$2"
+          # Handle switch to named worktree
+          local target_path
+          target_path=$(command wrkt switch "$2" 2>/dev/null)
+          if [ $? -eq 0 ] && [ -n "$target_path" ]; then
+            # Save current location as previous
+            export WRKT_OLDPWD="$PWD"
+            cd "$target_path"
+          else
+            command wrkt switch "$2"
+          fi
         fi
       else
         echo "Usage: wrkt switch <name>" >&2
@@ -65,6 +78,8 @@ function _wrkt_completion() {
         switch)
           local worktrees
           worktrees=($(command wrkt list 2>/dev/null | cut -f1))
+          # Add the previous worktree option
+          worktrees+=("-")
           _values 'worktrees' $worktrees
           ;;
         add)
