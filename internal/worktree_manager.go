@@ -89,7 +89,7 @@ func (wm *WorktreeManager) RemoveWorktree(repoPath, name string) error {
 
 func (wm *WorktreeManager) ensureWorktreesDirectory(worktreesDir string) error {
 	// Try Go standard library first, fallback to command if needed for compatibility
-	if err := os.MkdirAll(worktreesDir, 0755); err != nil {
+	if err := os.MkdirAll(worktreesDir, 0o755); err != nil {
 		// Fallback to command runner for existing tests compatibility
 		mkdirCmd := fmt.Sprintf("mkdir -p %s", shellescape(worktreesDir))
 		if _, cmdErr := wm.runner.Run(mkdirCmd); cmdErr != nil {
@@ -154,7 +154,7 @@ func (wm *WorktreeManager) createGitignoreWithEntry(gitignorePath string) error 
 }
 
 func (wm *WorktreeManager) appendToGitignore(gitignorePath string) error {
-	file, err := os.OpenFile(gitignorePath, os.O_APPEND|os.O_WRONLY, 0644)
+	file, err := os.OpenFile(gitignorePath, os.O_APPEND|os.O_WRONLY, 0o644)
 	if err != nil {
 		return fmt.Errorf("failed to open .gitignore for append: %w", err)
 	}
