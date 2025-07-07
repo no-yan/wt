@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/no-yan/wrkt/internal"
+	"github.com/no-yan/wt/internal"
 )
 
 func TestListCommand(t *testing.T) {

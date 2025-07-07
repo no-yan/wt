@@ -1,10 +1,10 @@
 # Common Workflows
 
-Real-world examples of using `wrkt` for daily development tasks.
+Real-world examples of using `wt` for daily development tasks.
 
 ## Quick Start
 
-This comprehensive example demonstrates the core `wrkt` commands in a realistic development scenario:
+This comprehensive example demonstrates the core `wt` commands in a realistic development scenario:
 
 ```bash
 # Start in main repository
@@ -13,19 +13,19 @@ git checkout main
 git pull origin main
 
 # 1. CREATE: Set up multiple parallel worktrees
-wrkt add feature/auth-service           # New feature from main
-wrkt add hotfix/security-patch main     # Critical fix from main  
-wrkt add review/pr-123 origin/feature/dashboard  # PR review from remote branch
+wt add feature/auth-service           # New feature from main
+wt add hotfix/security-patch main     # Critical fix from main  
+wt add review/pr-123 origin/feature/dashboard  # PR review from remote branch
 
 # 2. LIST: Check all worktrees
-wrkt list
+wt list
 #   main            /path/main           [main]
 #   auth-service     /path/auth-service   [feature/auth-service]
 #   security-patch   /path/security-patch [hotfix/security-patch]  
 # * pr-123          /path/pr-123         [feature/dashboard]
 
 # 3. SWITCH: Work on different tasks
-wrkt switch auth
+wt switch auth
 # Now in ~/projects/feature-auth-service/
 
 # Work on feature
@@ -34,7 +34,7 @@ git add .
 git commit -m "implement basic auth service"
 
 # 4. SWITCH: Handle urgent hotfix
-wrkt switch hotfix  # Fuzzy matching finds security-patch
+wt switch hotfix  # Fuzzy matching finds security-patch
 # Now in ~/projects/hotfix-security-patch/
 
 # Make critical fix
@@ -44,7 +44,7 @@ git commit -m "fix: security vulnerability"
 git push origin hotfix/security-patch
 
 # 5. SWITCH: Review colleague's PR
-wrkt switch review  # Fuzzy matching finds pr-123
+wt switch review  # Fuzzy matching finds pr-123
 # Now in ~/projects/review-pr-123/
 
 # Test the PR
@@ -52,16 +52,16 @@ make test
 git log --oneline main..HEAD
 
 # Switch back to feature work
-wrkt switch -  # Returns to previous (hotfix)
-wrkt switch auth  # Back to feature work
+wt switch -  # Returns to previous (hotfix)
+wt switch auth  # Back to feature work
 
 # 6. REMOVE: Clean up completed work
-wrkt remove hotfix    # Hotfix deployed
-wrkt remove review    # PR review complete
+wt remove hotfix    # Hotfix deployed
+wt remove review    # PR review complete
 # Keep feature worktree for continued development
 
 # Final state
-wrkt list
+wt list
 #   main            /path/main           [main]
 # * auth-service     /path/auth-service   [feature/auth-service]
 ```
@@ -73,17 +73,17 @@ When you need to try multiple approaches to solve a problem:
 
 ```bash
 # Create multiple experimental worktrees from same base
-wrkt add experiment/approach-a feature/base
-wrkt add experiment/approach-b feature/base  
-wrkt add experiment/approach-c feature/base
+wt add experiment/approach-a feature/base
+wt add experiment/approach-b feature/base  
+wt add experiment/approach-c feature/base
 
 # Test each approach independently
-wrkt switch approach-a && make benchmark
-wrkt switch approach-b && make benchmark  
-wrkt switch approach-c && make benchmark
+wt switch approach-a && make benchmark
+wt switch approach-b && make benchmark  
+wt switch approach-c && make benchmark
 
 # Compare results and keep the best
-wrkt remove approach-a approach-c  # Remove failed experiments
+wt remove approach-a approach-c  # Remove failed experiments
 # Continue with approach-b as main feature
 ```
 
@@ -92,10 +92,10 @@ For features that take weeks/months with frequent main branch updates:
 
 ```bash
 # Create long-running feature worktree
-wrkt add feature/new-architecture main
+wt add feature/new-architecture main
 
 # Periodically sync with main to avoid conflicts
-wrkt switch new-architecture
+wt switch new-architecture
 git fetch origin
 git rebase origin/main  # Keep feature current with main
 
@@ -108,33 +108,33 @@ git rebase origin/main  # Keep feature current with main
 ### Naming Conventions
 ```bash
 # Use consistent prefixes for easy identification
-wrkt add feature/auth-service
-wrkt add bugfix/login-issue  
-wrkt add hotfix/security-patch
-wrkt add experiment/new-algorithm
-wrkt add review/pr-123
+wt add feature/auth-service
+wt add bugfix/login-issue  
+wt add hotfix/security-patch
+wt add experiment/new-algorithm
+wt add review/pr-123
 ```
 
 ### Efficient Switching
 ```bash
 # Use fuzzy matching for speed
-wrkt switch auth     # Matches feature/auth-service
-wrkt switch -        # Quick return to previous worktree
+wt switch auth     # Matches feature/auth-service
+wt switch -        # Quick return to previous worktree
 
 # Create shell aliases for common operations
-alias wtmain='wrkt switch main'
-alias wtlist='wrkt list'
+alias wtmain='wt switch main'
+alias wtlist='wt list'
 ```
 
 ### Status Monitoring
 ```bash
 # Check all worktrees for uncommitted changes
-wrkt list
+wt list
 
 # Find specific worktree types
-wrkt list | grep "feature/"    # All feature worktrees
-wrkt list | grep "*"           # Current worktree
-wrkt list | grep "!"           # Dirty worktrees
+wt list | grep "feature/"    # All feature worktrees
+wt list | grep "*"           # Current worktree
+wt list | grep "!"           # Dirty worktrees
 ```
 
-These workflows demonstrate how `wrkt` integrates into real development scenarios, making parallel development efficient and organized.
+These workflows demonstrate how `wt` integrates into real development scenarios, making parallel development efficient and organized.

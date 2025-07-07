@@ -5,9 +5,9 @@ import (
 )
 
 var rootCmd = &cobra.Command{
-	Use:   "wrkt",
+	Use:   "wt",
 	Short: "Git worktree management made simple",
-	Long: `wrkt organizes git worktrees in a predictable structure and provides
+	Long: `wt organizes git worktrees in a predictable structure and provides
 seamless navigation with zsh integration.
 
 All worktrees are organized in the worktrees/ subdirectory for easy management.
@@ -17,7 +17,7 @@ Built-in aliases:
   rm  - alias for remove
   ls  - alias for list
 
-Use "wrkt [command] --help" for more information about a command.`,
+Use "wt [command] --help" for more information about a command.`,
 }
 
 func Execute() error {

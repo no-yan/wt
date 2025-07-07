@@ -11,7 +11,7 @@ echo "================================="
 # Check if we're in the correct repository
 if [[ ! -f "CLAUDE.md" ]]; then
     echo "❌ ERROR: CLAUDE.md not found"
-    echo "   You must run this script from the wrkt repository root"
+    echo "   You must run this script from the wt repository root"
     exit 1
 fi
 
@@ -24,7 +24,7 @@ echo "🌿 Current Branch: $(git branch --show-current 2>/dev/null || echo 'unkn
 CURRENT_DIR=$(pwd)
 CURRENT_BRANCH=$(git branch --show-current 2>/dev/null || echo "unknown")
 
-if [[ "$CURRENT_DIR" == */wrkt ]] && [[ "$CURRENT_DIR" != */worktrees/* ]]; then
+if [[ "$CURRENT_DIR" == */wt ]] && [[ "$CURRENT_DIR" != */worktrees/* ]]; then
     if [[ "$CURRENT_BRANCH" != "main" ]]; then
         echo ""
         echo "🚨 DOGFOODING VIOLATION DETECTED!"
@@ -87,7 +87,7 @@ else
 3. Follow sequential task management
 
 ## Active Worktrees Status
-$(./wrkt list --verbose 2>/dev/null || echo "Run './wrkt list --verbose' to see worktree status")
+$(./wt list --verbose 2>/dev/null || echo "Run './wt list --verbose' to see worktree status")
 
 ## Notes for Next Session
 - Update this file before ending session
@@ -101,7 +101,7 @@ fi
 echo ""
 echo "🌲 Worktree Status:"
 echo "-------------------"
-./wrkt list --verbose 2>/dev/null || echo "Error: wrkt command not available"
+./wt list --verbose 2>/dev/null || echo "Error: wt command not available"
 
 echo ""
 echo "✅ Session initialization complete!"

@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/no-yan/wrkt/internal"
+	"github.com/no-yan/wt/internal"
 )
 
 func TestCleanIntegration(t *testing.T) {
@@ -19,7 +19,7 @@ func TestCleanIntegration(t *testing.T) {
 	}
 
 	// Create temporary directory for test repo
-	tempDir, err := os.MkdirTemp("", "wrkt-clean-test-")
+	tempDir, err := os.MkdirTemp("", "wt-clean-test-")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}

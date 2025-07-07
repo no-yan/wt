@@ -1,21 +1,21 @@
 # Command Reference
 
-Complete reference for all `wrkt` commands.
+Complete reference for all `wt` commands.
 
 ## Shell Integration
 
-**IMPORTANT**: For `wrkt switch` to work, you must set up zsh integration:
+**IMPORTANT**: For `wt switch` to work, you must set up zsh integration:
 
 ```bash
 # Add to your zsh profile:
-eval "$(wrkt shell-init)"
+eval "$(wt shell-init)"
 ```
 
 **Note**: Only zsh is supported. Other shells will show an informative error message.
 
 ## Project Structure
 
-`wrkt` organizes all worktrees in the `worktrees/` subdirectory of your repository:
+`wt` organizes all worktrees in the `worktrees/` subdirectory of your repository:
 
 ```
 ~/projects/myapp/
@@ -38,12 +38,12 @@ eval "$(wrkt shell-init)"
 
 ## Commands
 
-### `wrkt list`
+### `wt list`
 
 Display worktrees with flexible filtering and status information.
 
 ```bash
-wrkt list [options]
+wt list [options]
 ```
 
 **Options:**
@@ -84,22 +84,22 @@ STATUS NAME              PATH                           BRANCH
 
 **Examples:**
 ```bash
-wrkt list                    # Show all worktrees
-wrkt list --dirty            # Show only worktrees with changes
-wrkt list --verbose          # Show detailed git status
-wrkt list --names-only       # Output: main\nfeature-auth\nhotfix-bug-123
+wt list                    # Show all worktrees
+wt list --dirty            # Show only worktrees with changes
+wt list --verbose          # Show detailed git status
+wt list --names-only       # Output: main\nfeature-auth\nhotfix-bug-123
 ```
 
-### `wrkt switch`
+### `wt switch`
 
 Navigate to a worktree directory with exact name matching.
 
 ```bash
-wrkt switch <exact-name>
+wt switch <exact-name>
 ```
 
 **Requirements:**
-- Zsh shell with integration set up: `eval "$(wrkt shell-init)"`
+- Zsh shell with integration set up: `eval "$(wt shell-init)"`
 
 **Arguments:**
 - `<exact-name>` - Exact worktree name (no fuzzy matching)
@@ -111,15 +111,15 @@ wrkt switch <exact-name>
 
 **Examples:**
 ```bash
-wrkt switch main             # Switch to main worktree
-wrkt switch feature-auth     # Switch to feature-auth worktree
-wrkt switch hotfix-bug-123   # Switch to hotfix worktree
+wt switch main             # Switch to main worktree
+wt switch feature-auth     # Switch to feature-auth worktree
+wt switch hotfix-bug-123   # Switch to hotfix worktree
 ```
 
 **Error Handling:**
-If a worktree is not found, `wrkt switch` will display available options:
+If a worktree is not found, `wt switch` will display available options:
 ```bash
-$ wrkt switch nonexistent
+$ wt switch nonexistent
 Worktree not found: nonexistent
 Available worktrees:
   main
@@ -130,15 +130,15 @@ Available worktrees:
 **Tab Completion:**
 Zsh integration provides tab completion for worktree names:
 ```bash
-wrkt switch <TAB>            # Shows available worktree names
+wt switch <TAB>            # Shows available worktree names
 ```
 
-### `wrkt add`
+### `wt add`
 
 Create a new worktree in the `worktrees/` subdirectory.
 
 ```bash
-wrkt add <branch> [options]
+wt add <branch> [options]
 ```
 
 **Arguments:**
@@ -163,24 +163,24 @@ wrkt add <branch> [options]
 4. Ensure uniqueness (append number if needed)
 
 **Auto-Setup:**
-On first use in a repository, `wrkt` automatically:
+On first use in a repository, `wt` automatically:
 1. Creates `worktrees/` directory
 2. Adds `worktrees/` to `.gitignore`
 
 **Examples:**
 ```bash
-wrkt add feature/auth              # Creates worktrees/feature-auth/
-wrkt add -b new-feature            # Create new branch and worktree
-wrkt add --detach HEAD~1           # Detached worktree at HEAD~1
-wrkt add main                      # Create main branch worktree
+wt add feature/auth              # Creates worktrees/feature-auth/
+wt add -b new-feature            # Create new branch and worktree
+wt add --detach HEAD~1           # Detached worktree at HEAD~1
+wt add main                      # Create main branch worktree
 ```
 
-### `wrkt remove`
+### `wt remove`
 
 Safely remove a worktree with confirmation prompts.
 
 ```bash
-wrkt remove <exact-name> [options]
+wt remove <exact-name> [options]
 ```
 
 **Arguments:**
@@ -197,17 +197,17 @@ wrkt remove <exact-name> [options]
 
 **Examples:**
 ```bash
-wrkt remove feature-auth     # Remove with confirmation
-wrkt remove --force auth     # Force remove without prompt
-wrkt remove --keep-branch feature-auth  # Remove worktree, keep branch
+wt remove feature-auth     # Remove with confirmation
+wt remove --force auth     # Force remove without prompt
+wt remove --keep-branch feature-auth  # Remove worktree, keep branch
 ```
 
-### `wrkt clean`
+### `wt clean`
 
 Clean up stale and orphaned worktrees.
 
 ```bash
-wrkt clean [options]
+wt clean [options]
 ```
 
 **Options:**
@@ -222,18 +222,18 @@ wrkt clean [options]
 
 **Examples:**
 ```bash
-wrkt clean               # Interactive cleanup
-wrkt clean --dry-run     # Show what would be cleaned
-wrkt clean --force       # Clean without prompts
-wrkt clean --expire 30d  # Clean worktrees older than 30 days
+wt clean               # Interactive cleanup
+wt clean --dry-run     # Show what would be cleaned
+wt clean --force       # Clean without prompts
+wt clean --expire 30d  # Clean worktrees older than 30 days
 ```
 
-### `wrkt shell-init`
+### `wt shell-init`
 
 Generate zsh integration code for directory switching.
 
 ```bash
-wrkt shell-init
+wt shell-init
 ```
 
 **Output:**
@@ -242,18 +242,18 @@ Generates zsh functions and completions.
 **Examples:**
 ```bash
 # Setup for current shell
-eval "$(wrkt shell-init)"
+eval "$(wt shell-init)"
 
 # View generated code
-wrkt shell-init
+wt shell-init
 
 # Add to zsh profile
-echo 'eval "$(wrkt shell-init)"' >> ~/.zshrc
+echo 'eval "$(wt shell-init)"' >> ~/.zshrc
 ```
 
 **What It Does:**
-- Creates `wrkt` zsh function that wraps the binary
-- Intercepts `wrkt switch` calls to perform actual directory changes
+- Creates `wt` zsh function that wraps the binary
+- Intercepts `wt switch` calls to perform actual directory changes
 - Adds tab completion for worktree names and commands
 - Preserves all other commands to pass through to the binary
 
@@ -273,35 +273,35 @@ echo 'eval "$(wrkt shell-init)"' >> ~/.zshrc
 
 The zsh integration works similarly to tools like `zoxide`:
 
-1. `wrkt shell-init` generates zsh functions
-2. These functions intercept `wrkt switch` commands
+1. `wt shell-init` generates zsh functions
+2. These functions intercept `wt switch` commands
 3. The binary returns the target path
 4. The zsh function performs the actual `cd`
 
 ### Zsh Integration
 
 ```zsh
-wrkt() {
+wt() {
     case "$1" in
         switch)
             if [[ -z "$2" ]]; then
-                echo "Usage: wrkt switch <worktree-name>" >&2
+                echo "Usage: wt switch <worktree-name>" >&2
                 return 1
             fi
             
-            local target_dir="$(command wrkt path "$2" 2>/dev/null)"
+            local target_dir="$(command wt path "$2" 2>/dev/null)"
             if [[ $? -eq 0 && -d "$target_dir" ]]; then
                 cd "$target_dir"
                 echo "→ $2 ($target_dir)"
             else
                 echo "Worktree not found: $2" >&2
                 echo "Available worktrees:" >&2
-                command wrkt list --names-only 2>/dev/null | sed 's/^/  /' >&2
+                command wt list --names-only 2>/dev/null | sed 's/^/  /' >&2
                 return 1
             fi
             ;;
         *)
-            command wrkt "$@"
+            command wt "$@"
             ;;
     esac
 }
@@ -311,21 +311,21 @@ wrkt() {
 
 Zsh integration includes comprehensive tab completion:
 
-- `wrkt switch <TAB>` - Complete with worktree names
-- `wrkt remove <TAB>` - Complete with worktree names  
-- `wrkt add <TAB>` - Complete with branch names
-- `wrkt <TAB>` - Complete with subcommands
+- `wt switch <TAB>` - Complete with worktree names
+- `wt remove <TAB>` - Complete with worktree names  
+- `wt add <TAB>` - Complete with branch names
+- `wt <TAB>` - Complete with subcommands
 
 ## Migration from git worktree
 
 ### Common Commands
 
-| git worktree | wrkt equivalent | Notes |
+| git worktree | wt equivalent | Notes |
 |--------------|-----------------|-------|
-| `git worktree list` | `wrkt list` | Enhanced with status indicators |
-| `git worktree add ../feature feature` | `wrkt add feature` | Creates in worktrees/ |
-| `git worktree remove ../feature` | `wrkt remove feature-name` | Exact name required |
-| `git worktree prune` | `wrkt clean` | Interactive with safety checks |
+| `git worktree list` | `wt list` | Enhanced with status indicators |
+| `git worktree add ../feature feature` | `wt add feature` | Creates in worktrees/ |
+| `git worktree remove ../feature` | `wt remove feature-name` | Exact name required |
+| `git worktree prune` | `wt clean` | Interactive with safety checks |
 
 ### Workflow Integration
 
@@ -336,11 +336,11 @@ cd ../feature-auth
 # work...
 cd ../main
 
-# wrkt workflow  
-wrkt add feature/auth        # Creates worktrees/feature-auth/
-wrkt switch feature-auth     # Navigate there
+# wt workflow  
+wt add feature/auth        # Creates worktrees/feature-auth/
+wt switch feature-auth     # Navigate there
 # work...
-wrkt switch main            # Return to main worktree
+wt switch main            # Return to main worktree
 ```
 
 ## Path Structure
@@ -373,18 +373,18 @@ wrkt switch main            # Return to main worktree
 
 ### "Command not found" after switch
 
-**Problem:** `wrkt switch` says "command not found"  
-**Solution:** Set up zsh integration: `eval "$(wrkt shell-init)"`
+**Problem:** `wt switch` says "command not found"  
+**Solution:** Set up zsh integration: `eval "$(wt shell-init)"`
 
 ### Directory doesn't change
 
-**Problem:** `wrkt switch` runs but directory doesn't change
+**Problem:** `wt switch` runs but directory doesn't change
 **Solution:** Ensure zsh integration is loaded in your current shell session
 
 ### Worktree not found
 
-**Problem:** `wrkt switch` can't find worktree
-**Solution:** Use `wrkt list` to see exact names, check spelling
+**Problem:** `wt switch` can't find worktree
+**Solution:** Use `wt list` to see exact names, check spelling
 
 ### Completion not working
 

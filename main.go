@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/no-yan/wrkt/cmd"
+	"github.com/no-yan/wt/cmd"
 )
 
 func main() {

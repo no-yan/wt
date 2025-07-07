@@ -1,6 +1,6 @@
 # Refactoring Command Execution
 
-This document outlines a plan to refactor the command execution logic within the `wrkt` tool to improve security and robustness.
+This document outlines a plan to refactor the command execution logic within the `wt` tool to improve security and robustness.
 
 ## 1. Problem Statement
 
@@ -107,4 +107,4 @@ This refactoring will provide several key benefits:
 -   **Increased Robustness**: The new implementation will correctly handle branch names, paths, and other arguments that contain spaces, quotes, and other special characters.
 -   **Simplified Code**: The removal of the custom `shellescape` function and the simplification of the `Run` method will result in cleaner, more maintainable code.
 
-This change is a critical improvement that will make `wrkt` a more secure and reliable tool.
+This change is a critical improvement that will make `wt` a more secure and reliable tool.

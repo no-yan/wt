@@ -5,7 +5,7 @@
   - [🚨🚨🚨 THE THREE COMMANDMENTS - NEVER VIOLATE 🚨🚨🚨](#-the-three-commandments---never-violate-)
     - [COMMANDMENT 1: THOU SHALT NOT use `git checkout` or `git switch` in main directory](#commandment-1-thou-shalt-not-use-git-checkout-or-git-switch-in-main-directory)
     - [COMMANDMENT 2: THOU SHALT NOT change branches within any worktree](#commandment-2-thou-shalt-not-change-branches-within-any-worktree)
-    - [COMMANDMENT 3: THOU SHALT use wrkt commands for ALL branch/worktree operations](#commandment-3-thou-shalt-use-wrkt-commands-for-all-branchworktree-operations)
+    - [COMMANDMENT 3: THOU SHALT use wt commands for ALL branch/worktree operations](#commandment-3-thou-shalt-use-wt-commands-for-all-branchworktree-operations)
   - [🔒 MANDATORY PRE-COMMAND VALIDATION](#-mandatory-pre-command-validation)
   - [🚨 EMERGENCY PROCEDURES](#-emergency-procedures)
     - [If Dogfooding Violation Detected](#if-dogfooding-violation-detected)
@@ -37,7 +37,7 @@ pwd
 git branch --show-current
 
 # 2. If in main directory with wrong branch, fix immediately
-if [[ $(pwd) == */wrkt ]] && [[ $(git branch --show-current) != "main" ]]; then
+if [[ $(pwd) == */wt ]] && [[ $(git branch --show-current) != "main" ]]; then
     echo "🚨 CRITICAL: Main directory on wrong branch - fixing now"
     git checkout main
 fi
@@ -46,7 +46,7 @@ fi
 cat .claude/SESSION.md
 
 # 4. List all worktrees to understand project state
-./wrkt list --verbose
+./wt list --verbose
 
 # 5. Confirm understanding
 echo "✅ Session initialized - ready to proceed with development"
@@ -63,7 +63,7 @@ echo "✅ Session initialized - ready to proceed with development"
 
 ### COMMANDMENT 1: THOU SHALT NOT use `git checkout` or `git switch` in main directory
 ### COMMANDMENT 2: THOU SHALT NOT change branches within any worktree
-### COMMANDMENT 3: THOU SHALT use wrkt commands for ALL branch/worktree operations
+### COMMANDMENT 3: THOU SHALT use wt commands for ALL branch/worktree operations
 
 ## 🔒 MANDATORY PRE-COMMAND VALIDATION
 
@@ -80,7 +80,7 @@ validate_dogfooding() {
     echo "🌿 Current branch: $current_branch"
 
     # Check if in main directory with wrong branch
-    if [[ "$current_dir" == */wrkt ]] && [[ "$current_branch" != "main" ]]; then
+    if [[ "$current_dir" == */wt ]] && [[ "$current_branch" != "main" ]]; then
         echo "❌ CRITICAL VIOLATION: Main directory on wrong branch!"
         echo "🔧 Required fix: git checkout main"
         echo "⚠️  Future operations: Use worktrees only"
@@ -91,14 +91,14 @@ validate_dogfooding() {
     read -p "Enter your intended git command: " git_command
     if [[ "$git_command" =~ "checkout -b" ]] || [[ "$git_command" =~ "switch -c" ]]; then
         echo "❌ PROHIBITED COMMAND: $git_command"
-        echo "✅ Use instead: ./wrkt add <branch-name>"
+        echo "✅ Use instead: ./wt add <branch-name>"
         return 1
     fi
 
     if [[ "$git_command" =~ "checkout" ]] || [[ "$git_command" =~ "switch" ]]; then
-        if [[ "$current_dir" == */wrkt ]]; then
+        if [[ "$current_dir" == */wt ]]; then
             echo "❌ PROHIBITED: No branch switching in main directory"
-            echo "✅ Use instead: ./wrkt switch <worktree-name>"
+            echo "✅ Use instead: ./wt switch <worktree-name>"
             return 1
         fi
     fi
@@ -115,7 +115,7 @@ validate_dogfooding
 
 ### If Dogfooding Violation Detected
 1. **STOP** all operations immediately
-2. **Assess state**: `./wrkt list --verbose`
+2. **Assess state**: `./wt list --verbose`
 3. **Fix main directory**: `git checkout main` if needed
 4. **Document lesson**: Update `.claude/SESSION.md`
 5. **Restart properly**: Follow session checklist
@@ -136,14 +136,14 @@ validate_dogfooding
 
 **Before ANY command:**
 1. **LOCATION**: Where am I? (Main directory or worktree?)
-2. **OPERATION**: What do I want? (New branch → `wrkt add`, Switch → `wrkt switch`)
+2. **OPERATION**: What do I want? (New branch → `wt add`, Switch → `wt switch`)
 3. **CONSTRAINT**: Does this violate the three commandments?
-4. **ALTERNATIVE**: What's the wrkt way to achieve this?
+4. **ALTERNATIVE**: What's the wt way to achieve this?
 
 ### Pattern Recognition
 
 🚫 **DANGER**: "I need to create a branch" → git checkout -b
-✅ **SAFE**: "I need a new workspace" → wrkt add
+✅ **SAFE**: "I need a new workspace" → wt add
 
 🚫 **DANGER**: "Quick switch to..." → git checkout
 ✅ **SAFE**: "Let me validate first" → pre-command check
@@ -166,7 +166,7 @@ validate_dogfooding
 - Record today's accomplishments and next actions for continuity
 
 ### MANDATORY: Dogfooding Principles
-- **Always use wrkt commands** for worktree operations
+- **Always use wt commands** for worktree operations
 - **Prohibit direct branch operations** in main directory
 - **Prohibit branch switching** within existing worktrees
 
@@ -184,15 +184,15 @@ validate_dogfooding
 - **Isolation**: 1 worktree = 1 branch = 1 feature
 
 ### Zsh Integration
-- **Command Role**: `wrkt switch` resolves and returns target path
+- **Command Role**: `wt switch` resolves and returns target path
 - **Shell Role**: Zsh functions handle actual directory changing
-- **Setup**: Generated by `wrkt shell-init`, zsh-only support
+- **Setup**: Generated by `wt shell-init`, zsh-only support
 - **Tab Completion**: Integrated with zsh completion system
 
 ### Command Design Principles
-- **Primary Info**: `wrkt list` shows all worktrees
-- **Detailed View**: `wrkt list --verbose` for git status
-- **Status Check**: `wrkt list --dirty` for uncommitted changes
+- **Primary Info**: `wt list` shows all worktrees
+- **Detailed View**: `wt list --verbose` for git status
+- **Status Check**: `wt list --dirty` for uncommitted changes
 - **Exact Matching**: No fuzzy matching to avoid complexity
 
 ## 🔗 NAVIGATION GUIDE

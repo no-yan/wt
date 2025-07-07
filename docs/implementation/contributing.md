@@ -1,6 +1,6 @@
 # Contributing Guide
 
-Welcome to the `wrkt` project! This guide will help you contribute effectively.
+Welcome to the `wt` project! This guide will help you contribute effectively.
 
 ## Development Setup
 
@@ -13,8 +13,8 @@ Welcome to the `wrkt` project! This guide will help you contribute effectively.
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/no-yan/wrkt.git
-   cd wrkt
+   git clone https://github.com/no-yan/wt.git
+   cd wt
    ```
 
 2. **Install dependencies**
@@ -24,7 +24,7 @@ Welcome to the `wrkt` project! This guide will help you contribute effectively.
 
 3. **Build the project**
    ```bash
-   go build -o wrkt
+   go build -o wt
    ```
 
 4. **Run tests**
@@ -47,7 +47,7 @@ Welcome to the `wrkt` project! This guide will help you contribute effectively.
 
 #### Project Structure
 ```
-wrkt/
+wt/
 ├── main.go              # Entry point
 ├── cmd/                 # CLI commands
 ├── internal/            # Core logic
@@ -251,7 +251,7 @@ func TestListCommand_Integration(t *testing.T) {
     setupGitRepo(t, tmpDir)
     
     // Test the command
-    cmd := exec.Command("./wrkt", "list")
+    cmd := exec.Command("./wt", "list")
     cmd.Dir = tmpDir
     output, err := cmd.Output()
     
@@ -480,4 +480,4 @@ Follow semantic versioning (SemVer):
 - Use benchmarks to measure performance
 - Consider async operations for long-running tasks
 
-Thank you for contributing to `wrkt`! Your efforts help make git worktree operations smoother for everyone.
+Thank you for contributing to `wt`! Your efforts help make git worktree operations smoother for everyone.

@@ -21,7 +21,7 @@ pre-push:
       run: go test ./...
       glob: "*.go"
     build:
-      run: go build -o wrkt
+      run: go build -o wt
       glob: "*.go"
     lint:
       run: golangci-lint run --fix -D errcheck -D staticcheck

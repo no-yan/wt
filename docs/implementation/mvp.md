@@ -1,6 +1,6 @@
 # MVP (Minimum Viable Product) Specification
 
-This document defines the MVP scope for `wrkt` to ensure focused development and clear success criteria.
+This document defines the MVP scope for `wt` to ensure focused development and clear success criteria.
 
 ## MVP Goals
 
@@ -13,7 +13,7 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 
 ### ✅ Core Commands
 
-#### 1. `wrkt list` (Unified Status Display)
+#### 1. `wt list` (Unified Status Display)
 - Display all worktrees with flexible filtering
 - Multiple view modes: default, dirty-only, verbose, names-only
 - Show status indicators and detailed information
@@ -28,9 +28,9 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 - Displays in human-readable format
 - Handles empty worktree list gracefully
 
-#### 2. `wrkt switch <name>` (Shell Integration Required)
+#### 2. `wt switch <name>` (Shell Integration Required)
 - Switch to worktree directory with exact name matching
-- Requires shell integration setup via `wrkt shell-init`
+- Requires shell integration setup via `wt shell-init`
 - Support exact name matching only
 - Change current working directory through shell functions
 
@@ -41,7 +41,7 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 - Clear error message for non-existent worktrees with suggestions
 - Deterministic behavior with exact matching
 
-#### 3. `wrkt shell-init` (Critical Infrastructure)
+#### 3. `wt shell-init` (Critical Infrastructure)
 - Generate shell integration code for directory switching
 - Support zsh only (eliminates multi-shell complexity)
 - Include tab completion for all commands
@@ -50,11 +50,11 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 **Acceptance Criteria:**
 - Generates working shell functions for zsh
 - Provides comprehensive tab completion
-- Handles `wrkt switch` interception correctly
-- Easy setup with `eval "$(wrkt shell-init)"`
+- Handles `wt switch` interception correctly
+- Easy setup with `eval "$(wt shell-init)"`
 - Clear error message for non-zsh shells
 
-#### 4. `wrkt add <branch> [path]`
+#### 4. `wt add <branch> [path]`
 - Create new worktree for specified branch
 - Auto-generate path if not provided
 - Handle existing branches and new branch creation
@@ -66,7 +66,7 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 - Validates branch existence and availability
 - Handles path conflicts with unique naming
 
-#### 5. `wrkt remove <name>`
+#### 5. `wt remove <name>`
 - Remove worktree safely with exact name matching
 - Confirm removal of dirty worktrees
 - Prevent removal of main worktree
@@ -145,7 +145,7 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 - CI/CD status integration
 
 #### 2. Configuration System
-- Configuration files (.wrkt.yaml)
+- Configuration files (.wt.yaml)
 - Custom path templates
 - User preference storage
 
@@ -175,10 +175,10 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 ### Functional Requirements
 
 1. **All core commands work correctly**
-   - `wrkt list` shows all worktrees with status
-   - `wrkt switch` navigates to correct worktree
-   - `wrkt add` creates worktree in correct location
-   - `wrkt remove` safely removes worktree
+   - `wt list` shows all worktrees with status
+   - `wt switch` navigates to correct worktree
+   - `wt add` creates worktree in correct location
+   - `wt remove` safely removes worktree
 
 2. **Exact matching is predictable**
    - Deterministic behavior with exact names
@@ -259,7 +259,7 @@ This document defines the MVP scope for `wrkt` to ensure focused development and
 
 ```bash
 # 1. Setup (one-time - zsh required)
-eval "$(wrkt shell-init)"  # Add to ~/.zshrc for permanent setup
+eval "$(wt shell-init)"  # Add to ~/.zshrc for permanent setup
 
 # 2. Start from main repository
 cd ~/projects/myapp
@@ -267,11 +267,11 @@ git checkout main
 git pull origin main
 
 # 3. Create feature worktree
-wrkt add feature/auth-service
+wt add feature/auth-service
 # → Creates worktrees/feature-auth-service/ with feature/auth-service branch
 
 # 4. Switch to feature worktree
-wrkt switch feature-auth-service
+wt switch feature-auth-service
 # → Now in ~/projects/myapp/worktrees/feature-auth-service/
 pwd  # /Users/you/projects/myapp/worktrees/feature-auth-service
 
@@ -281,24 +281,24 @@ git add .
 git commit -m "implement basic auth service"
 
 # 6. Check overall status
-wrkt list
+wt list
 # ✓ main                    ~/projects/myapp/worktrees/main              [main]
 # * feature-auth-service    ~/projects/myapp/worktrees/feature-auth-service  [feature/auth-service]
 
 # 7. Switch back to main to check something
-wrkt switch main
+wt switch main
 # → Back in ~/projects/myapp/worktrees/main
 
 # 8. Return to feature work
-wrkt switch feature-auth-service
+wt switch feature-auth-service
 # → Back in feature worktree
 
 # 9. Push feature when ready
 git push origin feature/auth-service
 
 # 10. Clean up after merge
-wrkt switch main
-wrkt remove feature-auth-service
+wt switch main
+wt remove feature-auth-service
 ```
 
 ### Multi-Feature Development
@@ -307,31 +307,31 @@ wrkt remove feature-auth-service
 
 ```bash
 # Set up multiple features (exact names required)
-wrkt add feature/user-management
-wrkt add feature/api-redesign
-wrkt add hotfix/security-patch
+wt add feature/user-management
+wt add feature/api-redesign
+wt add hotfix/security-patch
 
 # Check all worktrees
-wrkt list
+wt list
 # ✓ main                      ~/projects/myapp/worktrees/main                 [main]
 # * feature-user-management   ~/projects/myapp/worktrees/feature-user-mgmt    [feature/user-management]
 # ✓ feature-api-redesign     ~/projects/myapp/worktrees/feature-api-redesign [feature/api-redesign]
 # ↑ hotfix-security-patch    ~/projects/myapp/worktrees/hotfix-security      [hotfix/security-patch]
 
 # Work on user management (exact name required)
-wrkt switch feature-user-management
+wt switch feature-user-management
 # Develop feature...
 
 # Quick switch to API redesign
-wrkt switch feature-api-redesign
+wt switch feature-api-redesign
 # Work on different feature...
 
 # See what needs attention
-wrkt list --dirty
+wt list --dirty
 # * feature-user-management   ~/projects/myapp/worktrees/feature-user-mgmt   [feature/user-management]
 
 # Get detailed status
-wrkt list --verbose
+wt list --verbose
 # * feature-user-management (~/projects/myapp/worktrees/feature-user-mgmt) [feature/user-management]
 #    M user.go
 #   ?? test.go
@@ -345,11 +345,11 @@ wrkt list --verbose
 
 ```bash
 # Currently working on feature
-wrkt switch feature-xyz
+wt switch feature-xyz
 
 # Critical bug reported - create hotfix from main
-wrkt add hotfix/security-vulnerability main
-wrkt switch hotfix
+wt add hotfix/security-vulnerability main
+wt switch hotfix
 
 # Make the fix
 vim security.go
@@ -361,10 +361,10 @@ make test
 git push origin hotfix/security-vulnerability
 
 # Return to feature work
-wrkt switch -  # Back to feature-xyz
+wt switch -  # Back to feature-xyz
 
 # Clean up hotfix after deployment
-wrkt remove hotfix
+wt remove hotfix
 ```
 
 ### Code Review Workflow
@@ -373,10 +373,10 @@ wrkt remove hotfix
 
 ```bash
 # Create review worktree from PR branch
-wrkt add review/pr-456 origin/feature/new-dashboard
+wt add review/pr-456 origin/feature/new-dashboard
 
 # Switch to review
-wrkt switch review
+wt switch review
 
 # Review changes
 git log --oneline main..HEAD
@@ -384,10 +384,10 @@ git diff main..HEAD
 make test
 
 # Switch back to work
-wrkt switch -
+wt switch -
 
 # Clean up after review
-wrkt remove review
+wt remove review
 ```
 
 ### End of Day Cleanup
@@ -396,17 +396,17 @@ wrkt remove review
 
 ```bash
 # Check all worktrees
-wrkt list
+wt list
 
 # See what has uncommitted changes
-wrkt list --dirty
+wt list --dirty
 
 # Clean up completed features
-wrkt remove old-feature
-wrkt remove completed-task
+wt remove old-feature
+wt remove completed-task
 
 # Clean up stale worktrees
-wrkt clean
+wt clean
 ```
 
 ### Acceptance Test Scenarios
@@ -415,60 +415,60 @@ wrkt clean
    ```bash
    # Setup
    cd /path/to/git/repo
-   eval "$(wrkt shell-init)"
+   eval "$(wt shell-init)"
    
    # Create worktrees
-   wrkt add feature/auth
-   wrkt add hotfix/bug-123
+   wt add feature/auth
+   wt add hotfix/bug-123
    
    # List worktrees
-   wrkt list
+   wt list
    # Should show main, feature-auth, hotfix-bug-123
    
    # Switch between worktrees
-   wrkt switch auth
+   wt switch auth
    pwd # Should be in feature-auth directory
    
    # Remove worktree
-   wrkt remove auth
-   wrkt list
+   wt remove auth
+   wt list
    # Should not show feature-auth
    ```
 
 2. **Zsh Integration**
    ```bash
    # Without zsh integration
-   wrkt switch feature-auth  # Should show setup instructions
+   wt switch feature-auth  # Should show setup instructions
    
    # With zsh integration
-   eval "$(wrkt shell-init)"
-   wrkt switch feature-auth  # Should actually change directory
+   eval "$(wt shell-init)"
+   wt switch feature-auth  # Should actually change directory
    pwd  # Should be in feature-auth worktree directory
    ```
 
 3. **Exact Name Matching**
    ```bash
-   wrkt add feature/authentication-service
-   wrkt switch feature-authentication-service  # Exact name required
-   wrkt switch auth  # Should show "worktree not found" with suggestions
+   wt add feature/authentication-service
+   wt switch feature-authentication-service  # Exact name required
+   wt switch auth  # Should show "worktree not found" with suggestions
    ```
 
 4. **Error Handling**
    ```bash
    cd /tmp  # Not a git repository
-   wrkt list  # Should show helpful error
+   wt list  # Should show helpful error
    
    cd /path/to/git/repo
-   wrkt switch nonexistent  # Should show error with suggestions
-   wrkt remove main  # Should prevent removal
+   wt switch nonexistent  # Should show error with suggestions
+   wt remove main  # Should prevent removal
    ```
 
 ### Performance Benchmarks
 
-- `wrkt list` with 10 worktrees: <50ms
-- `wrkt switch` with exact matching: <10ms
-- `wrkt add` with auto-path: <200ms
-- `wrkt remove` with confirmation: <100ms
+- `wt list` with 10 worktrees: <50ms
+- `wt switch` with exact matching: <10ms
+- `wt add` with auto-path: <200ms
+- `wt remove` with confirmation: <100ms
 
 ## MVP Timeline
 

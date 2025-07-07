@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/no-yan/wrkt/internal"
+	"github.com/no-yan/wt/internal"
 	"github.com/spf13/cobra"
 )
 

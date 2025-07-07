@@ -17,17 +17,17 @@ echo "# Test repo" > README.md
 git add README.md
 git commit -m "Initial commit"
 
-# Build wrkt binary
-WRKT_DIR="/Users/noyan/ghq/github.com/no-yan/wrkt/worktrees/feature-auto-setup"
+# Build wt binary
+WRKT_DIR="/Users/noyan/ghq/github.com/no-yan/wt/worktrees/feature-auto-setup"
 cd "$WRKT_DIR"
-go build -o wrkt .
+go build -o wt .
 
 # Test auto-setup functionality
 cd "$TEMP_DIR"
 echo "Testing auto-setup functionality..."
 
-# Use the built wrkt binary to add a worktree
-"$WRKT_DIR/wrkt" add feature-test
+# Use the built wt binary to add a worktree
+"$WRKT_DIR/wt" add feature-test
 
 # Check if worktrees directory was created
 if [ -d "worktrees" ]; then
@@ -54,7 +54,7 @@ else
 fi
 
 # Test that running add again doesn't duplicate the .gitignore entry
-"$WRKT_DIR/wrkt" add feature-test2
+"$WRKT_DIR/wt" add feature-test2
 
 GITIGNORE_COUNT=$(grep -c "^worktrees/$" .gitignore)
 if [ "$GITIGNORE_COUNT" -eq 1 ]; then

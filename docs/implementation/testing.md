@@ -1,6 +1,6 @@
 # Testing Guide
 
-Comprehensive testing strategy and guidelines for the `wrkt` project.
+Comprehensive testing strategy and guidelines for the `wt` project.
 
 ## Testing Philosophy
 
@@ -13,7 +13,7 @@ Comprehensive testing strategy and guidelines for the `wrkt` project.
 ## Test Structure
 
 ```
-wrkt/
+wt/
 ├── internal/
 │   ├── worktree.go
 │   ├── worktree_test.go      # Unit tests
@@ -174,7 +174,7 @@ type TestRepo struct {
 }
 
 func SetupTestRepo(t *testing.T) *TestRepo {
-    tmpDir, err := os.MkdirTemp("", "wrkt-test-*")
+    tmpDir, err := os.MkdirTemp("", "wt-test-*")
     require.NoError(t, err)
     
     mainDir := filepath.Join(tmpDir, "main")

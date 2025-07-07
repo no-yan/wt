@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/no-yan/wrkt/internal"
+	"github.com/no-yan/wt/internal"
 )
 
 func TestIntegrationWorkflow(t *testing.T) {
@@ -19,7 +19,7 @@ func TestIntegrationWorkflow(t *testing.T) {
 	}
 
 	// Create temporary directory for test repo
-	tempDir, err := os.MkdirTemp("", "wrkt-integration-test-")
+	tempDir, err := os.MkdirTemp("", "wt-integration-test-")
 	if err != nil {
 		t.Fatalf("Failed to create temp dir: %v", err)
 	}

@@ -12,17 +12,17 @@ var shellInitCmd = &cobra.Command{
 	Long: `Generate shell integration code for zsh.
 
 Add this to your ~/.zshrc:
-  eval "$(wrkt shell-init)"
+  eval "$(wt shell-init)"
 
-This enables the 'wrkt switch' command to actually change directories.`,
+This enables the 'wt switch' command to actually change directories.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Print(generateZshIntegration())
 	},
 }
 
 func generateZshIntegration() string {
-	return `# wrkt shell integration for zsh
-function wrkt() {
+	return `# wt shell integration for zsh
+function wt() {
   case "$1" in
     switch|sw)
       if [ $# -eq 2 ]; then
@@ -33,34 +33,34 @@ function wrkt() {
             cd "$WRKT_OLDPWD"
             export WRKT_OLDPWD="$current_pwd"
           else
-            echo "wrkt: no previous worktree" >&2
+            echo "wt: no previous worktree" >&2
             return 1
           fi
         else
           # Handle switch to named worktree
           local target_path
-          target_path=$(command wrkt switch "$2" 2>/dev/null)
+          target_path=$(command wt switch "$2" 2>/dev/null)
           if [ $? -eq 0 ] && [ -n "$target_path" ]; then
             # Save current location as previous
             export WRKT_OLDPWD="$PWD"
             cd "$target_path"
           else
-            command wrkt switch "$2"
+            command wt switch "$2"
           fi
         fi
       else
-        echo "Usage: wrkt switch <name>" >&2
+        echo "Usage: wt switch <name>" >&2
         return 1
       fi
       ;;
     *)
-      command wrkt "$@"
+      command wt "$@"
       ;;
   esac
 }
 
-# Tab completion for wrkt
-function _wrkt_completion() {
+# Tab completion for wt
+function _wt_completion() {
   local state
   _arguments \
     '1: :->commands' \
@@ -83,14 +83,14 @@ function _wrkt_completion() {
       case $words[2] in
         switch|sw)
           local worktrees
-          worktrees=($(command wrkt list 2>/dev/null | cut -f1))
+          worktrees=($(command wt list 2>/dev/null | cut -f1))
           # Add the previous worktree option
           worktrees+=("-")
           _values 'worktrees' $worktrees
           ;;
         remove|rm)
           local worktrees
-          worktrees=($(command wrkt list 2>/dev/null | cut -f1))
+          worktrees=($(command wt list 2>/dev/null | cut -f1))
           _values 'worktrees' $worktrees
           ;;
         add)
@@ -104,6 +104,6 @@ function _wrkt_completion() {
   esac
 }
 
-compdef _wrkt_completion wrkt
+compdef _wt_completion wt
 `
 }

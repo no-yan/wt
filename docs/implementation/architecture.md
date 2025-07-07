@@ -1,6 +1,6 @@
 # Architecture Documentation
 
-Technical architecture and design decisions for the `wrkt` project.
+Technical architecture and design decisions for the `wt` project.
 
 ## System Overview
 
@@ -103,8 +103,8 @@ func (si *ShellIntegration) GenerateZshInit() string
 
 **Design Decisions**:
 - Zsh-only implementation eliminates multi-shell complexity
-- Generates zsh functions that wrap the `wrkt` binary
-- Intercepts `wrkt switch` calls to perform actual `cd` operations
+- Generates zsh functions that wrap the `wt` binary
+- Intercepts `wt switch` calls to perform actual `cd` operations
 - Provides tab completion for all commands
 - Clear error message for non-zsh users
 
@@ -212,11 +212,11 @@ func runSwitch(cmd *cobra.Command, args []string) error {
 
 ### Shell Integration Flow (Critical)
 ```
-User: wrkt switch auth
+User: wt switch auth
   ↓
-Shell Function: wrkt() { case switch → }
+Shell Function: wt() { case switch → }
   ↓  
-Binary: wrkt path auth
+Binary: wt path auth
   ↓
 WorktreeManager: GetWorktreePath("auth")
   ↓
@@ -239,13 +239,13 @@ Git Worktree Add → Validation → Success/Error Response
 
 ### Shell Integration Setup Flow
 ```
-User: eval "$(wrkt shell-init)"
+User: eval "$(wt shell-init)"
   ↓
 Binary: ShellIntegration.GenerateBashInit()
   ↓
-Shell: Loads wrkt() function and completion
+Shell: Loads wt() function and completion
   ↓
-User: Can now use wrkt switch functionality
+User: Can now use wt switch functionality
 ```
 
 ## Key Algorithms

@@ -1,10 +1,10 @@
 #!/bin/bash
 
-# Test script for wrkt switch - functionality
+# Test script for wt switch - functionality
 # Tests the implementation of previous worktree switching
 
 echo "======================================"
-echo "wrkt switch - Functionality Test"
+echo "wt switch - Functionality Test"
 echo "======================================"
 echo
 
@@ -31,19 +31,19 @@ info() {
     echo -e "${YELLOW}→ $1${NC}"
 }
 
-# Test 1: Build wrkt
-echo "Test 1: Build wrkt binary"
-if go build -o wrkt 2>/dev/null; then
-    pass_test "Built wrkt binary successfully"
+# Test 1: Build wt
+echo "Test 1: Build wt binary"
+if go build -o wt 2>/dev/null; then
+    pass_test "Built wt binary successfully"
 else
-    fail_test "Failed to build wrkt binary"
+    fail_test "Failed to build wt binary"
     exit 1
 fi
 
 # Test 2: Check shell integration includes '-' in tab completion
 echo
 echo "Test 2: Tab completion includes '-'"
-if ./wrkt shell-init | grep -q 'worktrees+=("-")'; then
+if ./wt shell-init | grep -q 'worktrees+=("-")'; then
     pass_test "Tab completion includes '-' option"
 else
     fail_test "Tab completion missing '-' option"
@@ -54,13 +54,13 @@ echo
 echo "Test 3: Error handling - no previous worktree"
 # Test in clean zsh process
 current_dir=$(pwd)
-output=$(zsh -c "export PATH='$current_dir:\$PATH'; eval \"\$(wrkt shell-init)\" 2>/dev/null; unset WRKT_OLDPWD; wrkt switch -" 2>&1)
+output=$(zsh -c "export PATH='$current_dir:\$PATH'; eval \"\$(wt shell-init)\" 2>/dev/null; unset WRKT_OLDPWD; wt switch -" 2>&1)
 exit_code=$?
 
-if [[ $exit_code -eq 1 ]] && [[ "$output" == "wrkt: no previous worktree" ]]; then
+if [[ $exit_code -eq 1 ]] && [[ "$output" == "wt: no previous worktree" ]]; then
     pass_test "Correct error message and exit code"
 else
-    fail_test "Expected 'wrkt: no previous worktree' with exit code 1, got: '$output' (exit code: $exit_code)"
+    fail_test "Expected 'wt: no previous worktree' with exit code 1, got: '$output' (exit code: $exit_code)"
 fi
 
 # Test 4: Success case - switch to previous worktree
@@ -70,7 +70,7 @@ current_dir=$(pwd)
 info "Testing switch to previous worktree (/tmp)"
 
 # Test in clean zsh process
-result=$(zsh -c "export PATH='$current_dir:\$PATH'; eval \"\$(wrkt shell-init)\" 2>/dev/null; export WRKT_OLDPWD='/tmp'; wrkt switch - >/dev/null 2>&1; echo \"\$(pwd)\"")
+result=$(zsh -c "export PATH='$current_dir:\$PATH'; eval \"\$(wt shell-init)\" 2>/dev/null; export WRKT_OLDPWD='/tmp'; wt switch - >/dev/null 2>&1; echo \"\$(pwd)\"")
 
 if [[ "$result" == "/tmp" ]]; then
     pass_test "Successfully switched to previous worktree"
@@ -81,7 +81,7 @@ fi
 # Test 5: Verify shell integration function structure
 echo
 echo "Test 5: Shell integration function structure"
-shell_code=$(./wrkt shell-init)
+shell_code=$(./wt shell-init)
 
 if echo "$shell_code" | grep -q 'if \[ "\$2" = "-" \]; then'; then
     pass_test "Shell function handles '-' argument"
@@ -98,10 +98,10 @@ fi
 # Test 6: Usage message
 echo
 echo "Test 6: Usage message"
-output=$(wrkt switch 2>&1)
+output=$(wt switch 2>&1)
 exit_code=$?
 
-if [[ $exit_code -eq 1 ]] && [[ "$output" == *"Usage:"* ]] && [[ "$output" == *"wrkt switch"* ]]; then
+if [[ $exit_code -eq 1 ]] && [[ "$output" == *"Usage:"* ]] && [[ "$output" == *"wt switch"* ]]; then
     pass_test "Correct usage message format"
 else
     fail_test "Incorrect usage message: '$output'"
@@ -117,20 +117,20 @@ else
     fail_test "Implementation doesn't properly check WRKT_OLDPWD"
 fi
 
-# Test 8: Consecutive wrkt switch - behavior (A → B → A)
+# Test 8: Consecutive wt switch - behavior (A → B → A)
 echo
 echo "Test 8: Consecutive switch - behavior"
 current_dir=$(pwd)
-info "Testing consecutive wrkt switch - commands"
+info "Testing consecutive wt switch - commands"
 
 # Test A → B → A pattern
 result=$(zsh -c "
 export PATH='$current_dir:\$PATH'
-eval \"\$(wrkt shell-init)\" 2>/dev/null
+eval \"\$(wt shell-init)\" 2>/dev/null
 cd /tmp
 export WRKT_OLDPWD='/var'
-wrkt switch - >/dev/null 2>&1
-wrkt switch - >/dev/null 2>&1
+wt switch - >/dev/null 2>&1
+wt switch - >/dev/null 2>&1
 echo \"\$(pwd)\"
 ")
 
@@ -152,13 +152,13 @@ echo -e "Total tests: $((TESTS_PASSED + TESTS_FAILED))"
 if [[ $TESTS_FAILED -eq 0 ]]; then
     echo
     echo -e "${GREEN}🎉 All tests passed!${NC}"
-    echo -e "${GREEN}The wrkt switch - functionality is working correctly.${NC}"
+    echo -e "${GREEN}The wt switch - functionality is working correctly.${NC}"
     echo
     echo "Usage examples:"
-    echo "  wrkt switch feature-branch    # Switch to feature-branch"
-    echo "  wrkt switch main             # Switch to main"
-    echo "  wrkt switch -                # Switch back to feature-branch"
-    echo "  wrkt switch -                # Switch back to main"
+    echo "  wt switch feature-branch    # Switch to feature-branch"
+    echo "  wt switch main             # Switch to main"
+    echo "  wt switch -                # Switch back to feature-branch"
+    echo "  wt switch -                # Switch back to main"
     exit 0
 else
     echo

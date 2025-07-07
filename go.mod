@@ -1,4 +1,4 @@
-module github.com/no-yan/wrkt
+module github.com/no-yan/wt
 
 go 1.24.0
 

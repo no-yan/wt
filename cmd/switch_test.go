@@ -3,7 +3,7 @@ package cmd
 import (
 	"testing"
 
-	"github.com/no-yan/wrkt/internal"
+	"github.com/no-yan/wt/internal"
 )
 
 func TestFindWorktreeByName(t *testing.T) {
