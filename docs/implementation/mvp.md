@@ -20,13 +20,13 @@ This document defines the MVP scope for `wt` to ensure focused development and c
 - Support for bare repositories
 
 **Acceptance Criteria:**
-- Lists all worktrees from `git worktree list`
-- Shows clean (✓) vs dirty (*) status indicators
-- `--dirty` flag shows only worktrees with changes
-- `--verbose` shows detailed git status output
-- `--names-only` outputs just names for shell completion
-- Displays in human-readable format
-- Handles empty worktree list gracefully
+- Lists all worktrees from `git worktree list` **[IMPLEMENTED]**
+- Shows clean (✓) vs dirty (*) status indicators **[PARTIALLY IMPLEMENTED - uses text instead of symbols]**
+- `--dirty` flag shows only worktrees with changes **[IMPLEMENTED]**
+- `--verbose` shows detailed git status output **[IMPLEMENTED]**
+- `--names-only` outputs just names for shell completion **[IMPLEMENTED]**
+- Displays in human-readable format **[IMPLEMENTED]**
+- Handles empty worktree list gracefully **[IMPLEMENTED]**
 
 #### 2. `wt switch <name>` (Shell Integration Required)
 - Switch to worktree directory with exact name matching
@@ -77,7 +77,7 @@ This document defines the MVP scope for `wt` to ensure focused development and c
 - Prevents main worktree removal
 - Cleans up administrative files
 
-### ✅ Smart Features
+### 🔄 Smart Features (Mixed Implementation Status)
 
 #### 1. Shell Integration (Mandatory)
 - Shell function generation for zsh only
@@ -106,34 +106,52 @@ This document defines the MVP scope for `wt` to ensure focused development and c
 - `main` → `../main/`
 
 **Rules:**
-- Remove common prefixes (feature/, hotfix/, bugfix/, docs/)
 - Replace slashes with dashes
-- Create in parent directory of repository
+- Create in worktrees/ subdirectory of repository
 - Ensure path uniqueness with numbering if needed
 
 #### 5. Status Indicators
-- `✓` - Clean worktree (no uncommitted changes)
-- `*` - Dirty worktree (uncommitted changes)
-- `↑` - Ahead of remote
-- `↓` - Behind remote
-- `L` - Locked worktree
-- `P` - Prunable worktree
+- `✓` - Clean worktree (no uncommitted changes) **[IMPLEMENTED]**
+- `*` - Dirty worktree (uncommitted changes) **[IMPLEMENTED]**
+- `↑` - Ahead of remote **[NOT IMPLEMENTED]**
+- `↓` - Behind remote **[NOT IMPLEMENTED]**
 
-### ✅ Error Handling
+**Current Implementation Status:**
+- Uses text-based status display: "(clean)", "(dirty)", "(stale)"
+- Missing symbol-based display and remote tracking indicators
+- Prunable worktrees should be communicated via informational message rather than per-item indicators
+
+### ✅ Error Handling (Implemented)
 
 #### 1. Git Repository Validation
 - Detect if current directory is in git repository
 - Provide helpful error message if not
 
-#### 2. Worktree State Validation
-- Handle locked worktrees
-- Handle missing worktree directories
-- Handle invalid worktree states
-
-#### 3. User Input Validation
+#### 2. User Input Validation
 - Validate command arguments
 - Provide helpful error messages
-- Suggest corrections for typos
+- Handle common error scenarios gracefully
+
+## 📊 Implementation Status Summary
+
+### ✅ Fully Implemented Features
+- Core command structure (`list`, `switch`, `add`, `remove`, `shell-init`)
+- Shell integration with zsh functions and tab completion
+- Auto-path generation (simple slash-to-dash conversion)
+- Exact name matching for worktree operations
+- Column alignment in list output
+- Basic error handling with safety checks
+- Worktree directory organization in `worktrees/` subdirectory
+
+### 🔄 Partially Implemented Features
+- **Status Indicators**: Basic status detection implemented, but uses text format ("clean", "dirty", "stale") instead of symbols (✓, *, etc.)
+- **Remote Tracking**: Missing ahead/behind indicators (↑, ↓)
+- **Prunable Detection**: Missing prunable worktree indicator (P)
+
+### ❌ Not Implemented Features
+- Symbol-based status display (✓, *, ↑, ↓)
+- Remote tracking status (ahead/behind remote)
+- Prunable worktree notification (should show tip message when prunable worktrees exist)
 
 ## MVP Constraints
 
@@ -154,18 +172,12 @@ This document defines the MVP scope for `wt` to ensure focused development and c
 - Bulk cleanup commands
 - Scripting automation features
 
-#### 4. Advanced Git Features
-- Submodule support
-- Sparse checkout integration
-- Git hooks integration
-- Remote synchronization
-
-#### 5. Claude Development Tracking
+#### 4. Claude Development Tracking
 - Development session management
 - Progress tracking
 - Status persistence
 
-#### 6. Advanced Display Features
+#### 5. Advanced Display Features
 - Commit information display
 - Detailed remote tracking
 - Performance metrics
