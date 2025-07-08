@@ -15,6 +15,14 @@ pre-commit:
       glob: "*.go"
       stage_fixed: true
 
+post-commit:
+  commands:
+    review:
+      run: git log -p -1 HEAD | claude 'Review this commit. Think hard.'
+    lint:
+      run: golangci-lint run --fix -D errcheck -D staticcheck
+      glob: "*.go"
+
 pre-push:
   commands:
     test:
@@ -23,6 +31,4 @@ pre-push:
     build:
       run: go build -o wt
       glob: "*.go"
-    lint:
-      run: golangci-lint run --fix -D errcheck -D staticcheck
-      glob: "*.go"
+
