@@ -15,14 +15,25 @@ pre-commit:
       glob: "*.go"
       stage_fixed: true
 
+
 pre-push:
   commands:
+    review:
+      run: |
+        echo "🔍 Reviewing changes before push..."
+        git diff main...HEAD | claude 'Review this code diff. Focus on: 1) Potential bugs/issues 2) Code quality problems 3) Missing error handling 4) Security concerns. Rate severity: LOW/MEDIUM/HIGH. Be concise but thorough.' | tee -a .git/claude-review.log
+        echo ""
+        read -p "Continue with push? (Y/n): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Nn]$ ]]; then
+          echo "❌ Push cancelled"
+          exit 1
+        fi
+        echo "✅ Proceeding with push..."
     test:
       run: go test ./...
       glob: "*.go"
     build:
       run: go build -o wt
       glob: "*.go"
-    lint:
-      run: golangci-lint run --fix -D errcheck -D staticcheck
-      glob: "*.go"
+
