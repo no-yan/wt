@@ -102,3 +102,7 @@ func (m *MockCommandRunner) Run(command string) (string, error) {
 	// Simulate command failure for commands not in outputs
 	return "", fmt.Errorf("command failed: %s", command)
 }
+
+func (m *MockCommandRunner) GetCommands() []string {
+	return m.commands
+}

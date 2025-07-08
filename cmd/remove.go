@@ -9,19 +9,18 @@ import (
 )
 
 var removeCmd = &cobra.Command{
-	Use:     "remove <name>",
+	Use:     "remove <name>...",
 	Aliases: []string{"rm"},
-	Short:   "Remove a worktree",
-	Long: `Remove a worktree by name.
+	Short:   "Remove one or more worktrees",
+	Long: `Remove one or more worktrees by name.
 
 Safety checks:
 - Cannot remove the main worktree
 - Cannot remove worktrees with uncommitted changes
-- Must be in worktrees/ subdirectory`,
-	Args: cobra.ExactArgs(1),
+- Must be in worktrees/ subdirectory
+- When removing multiple worktrees, validates all before removing any (fail-fast)`,
+	Args: cobra.MinimumNArgs(1),
 	Run: func(cmd *cobra.Command, args []string) {
-		name := args[0]
-
 		runner := internal.NewExecCommandRunner()
 		gitService := internal.NewGitService(runner)
 		manager := internal.NewWorktreeManager(gitService, runner)
@@ -32,11 +31,22 @@ Safety checks:
 			os.Exit(1)
 		}
 
-		if err := manager.RemoveWorktree(repoPath, name); err != nil {
-			fmt.Fprintf(os.Stderr, "Error removing worktree: %v\n", err)
-			os.Exit(1)
+		if len(args) == 1 {
+			// Single worktree removal
+			if err := manager.RemoveWorktree(repoPath, args[0]); err != nil {
+				fmt.Fprintf(os.Stderr, "Error removing worktree: %v\n", err)
+				os.Exit(1)
+			}
+			fmt.Printf("Removed worktree: %s\n", args[0])
+		} else {
+			// Multiple worktree removal with fail-fast validation
+			if err := manager.RemoveMultipleWorktrees(repoPath, args); err != nil {
+				fmt.Fprintf(os.Stderr, "Error removing worktrees: %v\n", err)
+				os.Exit(1)
+			}
+			for _, name := range args {
+				fmt.Printf("Removed worktree: %s\n", name)
+			}
 		}
-
-		fmt.Printf("Removed worktree: %s\n", name)
 	},
 }
