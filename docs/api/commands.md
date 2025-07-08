@@ -177,29 +177,26 @@ wt add main                      # Create main branch worktree
 
 ### `wt remove`
 
-Safely remove a worktree with confirmation prompts.
+Safely remove one or more worktrees with validation.
 
 ```bash
-wt remove <exact-name> [options]
+wt remove <exact-name>... [options]
 ```
 
 **Arguments:**
-- `<exact-name>` - Exact worktree name to remove
-
-**Options:**
-- `--force` - Force removal without confirmation
-- `--keep-branch` - Remove worktree but keep the branch
+- `<exact-name>...` - One or more exact worktree names to remove
 
 **Safety Features:**
-- Confirms removal of dirty worktrees
-- Prevents removal of current worktree
-- Shows what will be removed before confirmation
+- Cannot remove the main worktree
+- Cannot remove worktrees with uncommitted changes
+- Must be in worktrees/ subdirectory
+- When removing multiple worktrees, validates all before removing any (fail-fast behavior)
 
 **Examples:**
 ```bash
-wt remove feature-auth     # Remove with confirmation
-wt remove --force auth     # Force remove without prompt
-wt remove --keep-branch feature-auth  # Remove worktree, keep branch
+wt remove feature-auth                    # Remove single worktree
+wt remove feature-auth api-update         # Remove multiple worktrees
+wt remove auth ui tests                   # Remove multiple worktrees at once
 ```
 
 ### `wt clean`
