@@ -57,6 +57,16 @@ func TestListCommand(t *testing.T) {
 	}
 }
 
+func TestFormatWorktreeList_EmptySlice(t *testing.T) {
+	var buf bytes.Buffer
+	formatWorktreeList([]internal.Worktree{}, &buf)
+	
+	output := buf.String()
+	if output != "" {
+		t.Errorf("expected empty output for empty slice, got %q", output)
+	}
+}
+
 func TestFormatWorktreeList_AlignedOutput(t *testing.T) {
 	worktrees := []internal.Worktree{
 		{

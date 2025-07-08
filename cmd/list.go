@@ -71,14 +71,10 @@ func filterWorktrees(worktrees []internal.Worktree, dirtyOnly bool) []internal.W
 }
 
 func formatWorktreeList(worktrees []internal.Worktree, w io.Writer) {
-	if len(worktrees) == 0 {
-		return
-	}
-
-	widths := calculateColumnWidths(worktrees)
+	ws := calculateColumnWidths(worktrees)
 	for _, wt := range worktrees {
 		status := formatStatus(wt.Status)
-		if _, err := fmt.Fprintf(w, "%-*s  %-*s  (%s)\n", widths.name, wt.Name(), widths.path, wt.Path, status); err != nil {
+		if _, err := fmt.Fprintf(w, "%-*s  %-*s  (%s)\n", ws.name, wt.Name(), ws.path, wt.Path, status); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
 		}
 	}
@@ -101,22 +97,13 @@ type columnWidths struct {
 
 // calculateColumnWidths calculates the maximum width for each column
 func calculateColumnWidths(worktrees []internal.Worktree) columnWidths {
-	var widths columnWidths
+	var ws columnWidths
 	for _, wt := range worktrees {
-		nameWidth := utf8.RuneCountInString(wt.Name())
-		branchWidth := utf8.RuneCountInString(wt.Branch)
-		pathWidth := utf8.RuneCountInString(wt.Path)
-		if nameWidth > widths.name {
-			widths.name = nameWidth
-		}
-		if branchWidth > widths.branch {
-			widths.branch = branchWidth
-		}
-		if pathWidth > widths.path {
-			widths.path = pathWidth
-		}
+		ws.name = max(ws.name, utf8.RuneCountInString(wt.Name()))
+		ws.branch = max(ws.branch, utf8.RuneCountInString(wt.Branch))
+		ws.path = max(ws.path, utf8.RuneCountInString(wt.Path))
 	}
-	return widths
+	return ws
 }
 
 // formatStatus converts a worktree status to its string representation
@@ -132,14 +119,10 @@ func formatStatus(status internal.Status) string {
 }
 
 func formatWorktreeListVerbose(worktrees []internal.Worktree, w io.Writer, service *internal.GitService) {
-	if len(worktrees) == 0 {
-		return
-	}
-
-	widths := calculateColumnWidths(worktrees)
+	ws := calculateColumnWidths(worktrees)
 	for _, wt := range worktrees {
 		status := formatStatus(wt.Status)
-		if _, err := fmt.Fprintf(w, "%-*s  %-*s  %-*s  (%s)\n", widths.name, wt.Name(), widths.branch, wt.Branch, widths.path, wt.Path, status); err != nil {
+		if _, err := fmt.Fprintf(w, "%-*s  %-*s  %-*s  (%s)\n", ws.name, wt.Name(), ws.branch, wt.Branch, ws.path, wt.Path, status); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
 		}
 
