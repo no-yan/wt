@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"unicode/utf8"
 
 	"github.com/no-yan/wt/internal"
 	"github.com/spf13/cobra"
@@ -70,16 +71,10 @@ func filterWorktrees(worktrees []internal.Worktree, dirtyOnly bool) []internal.W
 }
 
 func formatWorktreeList(worktrees []internal.Worktree, w io.Writer) {
+	ws := calculateColumnWidths(worktrees)
 	for _, wt := range worktrees {
-		status := "clean"
-		switch wt.Status {
-		case internal.StatusDirty:
-			status = "dirty"
-		case internal.StatusStale:
-			status = "stale"
-		}
-
-		if _, err := fmt.Fprintf(w, "%s\t%s\t(%s)\n", wt.Name(), wt.Path, status); err != nil {
+		status := formatStatus(wt.Status)
+		if _, err := fmt.Fprintf(w, "%-*s  %-*s  (%s)\n", ws.name, wt.Name(), ws.path, wt.Path, status); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
 		}
 	}
@@ -93,17 +88,41 @@ func formatWorktreeNames(worktrees []internal.Worktree, w io.Writer) {
 	}
 }
 
-func formatWorktreeListVerbose(worktrees []internal.Worktree, w io.Writer, service *internal.GitService) {
-	for _, wt := range worktrees {
-		status := "clean"
-		switch wt.Status {
-		case internal.StatusDirty:
-			status = "dirty"
-		case internal.StatusStale:
-			status = "stale"
-		}
+// columnWidths holds the maximum width for each column
+type columnWidths struct {
+	name   int
+	branch int
+	path   int
+}
 
-		if _, err := fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", wt.Name(), wt.Branch, wt.Path, status); err != nil {
+// calculateColumnWidths calculates the maximum width for each column
+func calculateColumnWidths(worktrees []internal.Worktree) columnWidths {
+	var ws columnWidths
+	for _, wt := range worktrees {
+		ws.name = max(ws.name, utf8.RuneCountInString(wt.Name()))
+		ws.branch = max(ws.branch, utf8.RuneCountInString(wt.Branch))
+		ws.path = max(ws.path, utf8.RuneCountInString(wt.Path))
+	}
+	return ws
+}
+
+// formatStatus converts a worktree status to its string representation
+func formatStatus(status internal.Status) string {
+	switch status {
+	case internal.StatusDirty:
+		return "dirty"
+	case internal.StatusStale:
+		return "stale"
+	default:
+		return "clean"
+	}
+}
+
+func formatWorktreeListVerbose(worktrees []internal.Worktree, w io.Writer, service *internal.GitService) {
+	ws := calculateColumnWidths(worktrees)
+	for _, wt := range worktrees {
+		status := formatStatus(wt.Status)
+		if _, err := fmt.Fprintf(w, "%-*s  %-*s  %-*s  (%s)\n", ws.name, wt.Name(), ws.branch, wt.Branch, ws.path, wt.Path, status); err != nil {
 			fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
 		}
 
