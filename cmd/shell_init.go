@@ -83,14 +83,14 @@ function _wt_completion() {
       case $words[2] in
         switch|sw)
           local worktrees
-          worktrees=($(command wt list 2>/dev/null | cut -f1))
+          worktrees=($(command wt list --names-only 2>/dev/null))
           # Add the previous worktree option
           worktrees+=("-")
           _values 'worktrees' $worktrees
           ;;
         remove|rm)
           local worktrees
-          worktrees=($(command wt list 2>/dev/null | cut -f1))
+          worktrees=($(command wt list --names-only 2>/dev/null))
           _values 'worktrees' $worktrees
           ;;
         add)
