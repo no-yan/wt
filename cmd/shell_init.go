@@ -90,7 +90,7 @@ function _wt_completion() {
           ;;
         remove|rm)
           local worktrees
-          worktrees=($(command wt list --names-only 2>/dev/null))
+          worktrees=($(command wt list --names-only 2>/dev/null | grep -v -E '^(main|master)$'))
           _values 'worktrees' $worktrees
           ;;
         add)
