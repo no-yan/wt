@@ -27,7 +27,7 @@ pre-push:
     review:
       run: |
         echo "🔍 Reviewing changes before push..."
-        git diff main...HEAD | claude -p 'Review this code diff. Focus on: 1) Potential bugs/issues 2) Code quality problems 3) Missing error handling 4) Security concerns. Rate severity: LOW/MEDIUM/HIGH. Be concise but thorough. Output should be in Japanese.'
+        git diff origin/main...HEAD | claude -p 'Review this code diff. Focus on: 1) Potential bugs/issues 2) Code quality problems 3) Missing error handling 4) Security concerns. Rate severity: LOW/MEDIUM/HIGH. Be concise but thorough. Output should be in Japanese.'
         echo ""
         read -p "Continue with push? (Y/n): " -n 1 -r
         echo
