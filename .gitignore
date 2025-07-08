@@ -1,8 +1,8 @@
 # Worktrees directory
 
 # Binary
-wrkt
-wrkt-*
+wt
+wt-*
 
 # Go build cache
 *.out
