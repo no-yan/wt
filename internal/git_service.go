@@ -24,22 +24,35 @@ func (g *GitService) Type() VCSType {
 }
 
 // ListWorkspaces implements VCSService interface
-func (g *GitService) ListWorkspaces() ([]Workspace, error) {
-	worktrees, err := g.ListWorktrees()
+func (g *GitService) ListWorkspaces(opts ListOptions) ([]Workspace, error) {
+	output, err := g.runner.Run("git worktree list --porcelain")
 	if err != nil {
 		return nil, err
 	}
 
+	worktrees := ParseWorktreeList(output)
 	workspaces := make([]Workspace, len(worktrees))
+
 	for i, wt := range worktrees {
 		workspaces[i] = Workspace{
 			Name:     wt.Name(),
 			Path:     wt.Path,
 			Revision: wt.Head,
-			Status:   wt.Status,
-			Branch:   wt.Branch,
+			Labels:   []string{wt.Branch}, // Git branch as label
+		}
+
+		// Only fetch status if requested
+		if opts.IncludeStatus {
+			statusOutput, err := g.runner.Run("git -C " + wt.Path + " status --porcelain")
+			if err != nil {
+				workspaces[i].Status = StatusStale
+				workspaces[i].Error = err
+			} else {
+				workspaces[i].Status = ParseWorktreeStatus(statusOutput)
+			}
 		}
 	}
+
 	return workspaces, nil
 }
 

@@ -81,3 +81,48 @@ func CheckVCSAvailable(runner CommandRunner, vcsType VCSType) error {
 		return fmt.Errorf("unsupported VCS type: %s", vcsType)
 	}
 }
+
+// CreateVCSService detects the VCS type and returns the appropriate service.
+// This is the preferred way to obtain a VCSService instance.
+func CreateVCSService(runner CommandRunner) (VCSService, error) {
+	vcsType, err := DetectVCS(".")
+	if err != nil {
+		return nil, err
+	}
+
+	if err := CheckVCSAvailable(runner, vcsType); err != nil {
+		return nil, err
+	}
+
+	switch vcsType {
+	case VCSGit:
+		return NewGitService(runner), nil
+	case VCSJj:
+		return NewJjService(runner), nil
+	default:
+		return nil, fmt.Errorf("unsupported VCS type: %s", vcsType)
+	}
+}
+
+// CreateWorkspaceManager detects the VCS type and returns the appropriate manager.
+func CreateWorkspaceManager(runner CommandRunner) (WorkspaceManager, VCSType, error) {
+	vcsType, err := DetectVCS(".")
+	if err != nil {
+		return nil, "", err
+	}
+
+	if err := CheckVCSAvailable(runner, vcsType); err != nil {
+		return nil, "", err
+	}
+
+	switch vcsType {
+	case VCSGit:
+		gitService := NewGitService(runner)
+		return NewWorktreeManager(gitService, runner), vcsType, nil
+	case VCSJj:
+		jjService := NewJjService(runner)
+		return NewJjWorkspaceManager(jjService), vcsType, nil
+	default:
+		return nil, "", fmt.Errorf("unsupported VCS type: %s", vcsType)
+	}
+}

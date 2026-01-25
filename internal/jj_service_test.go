@@ -69,7 +69,8 @@ func TestJjService_ListWorkspaces(t *testing.T) {
 			}
 
 			service := NewJjService(mockRunner)
-			workspaces, err := service.ListWorkspaces()
+			opts := ListOptions{} // Basic list, no status/labels
+			workspaces, err := service.ListWorkspaces(opts)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ListWorkspaces() error = %v, wantErr %v", err, tt.wantErr)

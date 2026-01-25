@@ -10,18 +10,25 @@ const (
 
 // Workspace represents a unified view of a Git worktree or jj workspace
 type Workspace struct {
-	Name      string   // Workspace/worktree name
-	Path      string   // Absolute path to workspace directory
-	Revision  string   // Git: HEAD commit, jj: change ID
-	Status    Status   // Clean/Dirty/Stale
-	Branch    string   // Git only: branch name (empty for jj)
-	Bookmarks []string // jj only: bookmarks in trunk()..@ range
+	Name     string   // Workspace/worktree name
+	Path     string   // Absolute path to workspace directory
+	Revision string   // Git: HEAD commit, jj: change ID
+	Status   Status   // Clean/Dirty/Stale (only populated if ListOptions.IncludeStatus)
+	Labels   []string // VCS-agnostic labels: Git branch or jj bookmarks
+	Error    error    // Error encountered while fetching details (partial success)
+}
+
+// ListOptions controls what information to fetch when listing workspaces.
+// This allows callers to avoid unnecessary commands when they don't need all details.
+type ListOptions struct {
+	IncludeStatus bool // Fetch status for each workspace (adds N commands)
+	IncludeLabels bool // Fetch labels (branch/bookmarks) for each workspace
 }
 
 // VCSService defines the interface for version control read operations
 type VCSService interface {
 	Type() VCSType
-	ListWorkspaces() ([]Workspace, error)
+	ListWorkspaces(opts ListOptions) ([]Workspace, error)
 	GetDetailedStatus(workspacePath string) ([]string, error)
 }
 

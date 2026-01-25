@@ -33,22 +33,19 @@ Filtering options:
 	Run: func(cmd *cobra.Command, args []string) {
 		runner := internal.NewExecCommandRunner()
 
-		// Detect VCS type
-		vcsType, err := internal.DetectVCS(".")
+		service, err := internal.CreateVCSService(runner)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error detecting VCS: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 
-		var service internal.VCSService
-		switch vcsType {
-		case internal.VCSGit:
-			service = internal.NewGitService(runner)
-		case internal.VCSJj:
-			service = internal.NewJjService(runner)
+		// Only fetch status when needed (for filtering or display)
+		opts := internal.ListOptions{
+			IncludeStatus: listDirtyOnly || listVerbose || !listNamesOnly,
+			IncludeLabels: !listNamesOnly, // Labels for display
 		}
 
-		workspaces, err := service.ListWorkspaces()
+		workspaces, err := service.ListWorkspaces(opts)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error listing workspaces: %v\n", err)
 			os.Exit(1)
@@ -63,7 +60,7 @@ Filtering options:
 		} else if listVerbose {
 			formatWorkspaceListVerbose(filtered, os.Stdout, service)
 		} else {
-			formatWorkspaceList(filtered, os.Stdout, vcsType)
+			formatWorkspaceList(filtered, os.Stdout, service.Type())
 		}
 	},
 }
@@ -93,15 +90,15 @@ func formatWorkspaceList(workspaces []internal.Workspace, w io.Writer, vcsType i
 	for _, ws := range workspaces {
 		status := formatStatus(ws.Status)
 		if vcsType == internal.VCSJj {
-			// jj: NAME  CHANGE  BOOKMARK  (STATUS)
-			bookmark := ""
-			if len(ws.Bookmarks) > 0 {
-				bookmark = strings.Join(ws.Bookmarks, ", ")
+			// jj: NAME  CHANGE  LABELS  (STATUS)
+			labels := ""
+			if len(ws.Labels) > 0 {
+				labels = strings.Join(ws.Labels, ", ")
 			}
 			if _, err := fmt.Fprintf(w, "%-*s  %-*s  %-*s  (%s)\n",
 				cw.name, ws.Name,
 				cw.revision, ws.Revision,
-				cw.bookmark, bookmark,
+				cw.labels, labels,
 				status); err != nil {
 				fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
 			}
@@ -128,10 +125,9 @@ func formatWorkspaceNames(workspaces []internal.Workspace, w io.Writer) {
 // workspaceColumnWidths holds the maximum width for each column
 type workspaceColumnWidths struct {
 	name     int
-	branch   int
 	path     int
 	revision int
-	bookmark int
+	labels   int
 }
 
 // calculateWorkspaceColumnWidths calculates the maximum width for each column
@@ -139,12 +135,11 @@ func calculateWorkspaceColumnWidths(workspaces []internal.Workspace, vcsType int
 	var cw workspaceColumnWidths
 	for _, ws := range workspaces {
 		cw.name = max(cw.name, utf8.RuneCountInString(ws.Name))
-		cw.branch = max(cw.branch, utf8.RuneCountInString(ws.Branch))
 		cw.path = max(cw.path, utf8.RuneCountInString(ws.Path))
 		cw.revision = max(cw.revision, utf8.RuneCountInString(ws.Revision))
-		if len(ws.Bookmarks) > 0 {
-			bookmark := strings.Join(ws.Bookmarks, ", ")
-			cw.bookmark = max(cw.bookmark, utf8.RuneCountInString(bookmark))
+		if len(ws.Labels) > 0 {
+			labels := strings.Join(ws.Labels, ", ")
+			cw.labels = max(cw.labels, utf8.RuneCountInString(labels))
 		}
 	}
 	return cw
@@ -166,15 +161,16 @@ func formatWorkspaceListVerbose(workspaces []internal.Workspace, w io.Writer, se
 	cw := calculateWorkspaceColumnWidths(workspaces, service.Type())
 	for _, ws := range workspaces {
 		status := formatStatus(ws.Status)
+		labels := ""
+		if len(ws.Labels) > 0 {
+			labels = strings.Join(ws.Labels, ", ")
+		}
+
 		if service.Type() == internal.VCSJj {
-			bookmark := ""
-			if len(ws.Bookmarks) > 0 {
-				bookmark = strings.Join(ws.Bookmarks, ", ")
-			}
 			if _, err := fmt.Fprintf(w, "%-*s  %-*s  %-*s  %-*s  (%s)\n",
 				cw.name, ws.Name,
 				cw.revision, ws.Revision,
-				cw.bookmark, bookmark,
+				cw.labels, labels,
 				cw.path, ws.Path,
 				status); err != nil {
 				fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)
@@ -182,7 +178,7 @@ func formatWorkspaceListVerbose(workspaces []internal.Workspace, w io.Writer, se
 		} else {
 			if _, err := fmt.Fprintf(w, "%-*s  %-*s  %-*s  (%s)\n",
 				cw.name, ws.Name,
-				cw.branch, ws.Branch,
+				cw.labels, labels,
 				cw.path, ws.Path,
 				status); err != nil {
 				fmt.Fprintf(os.Stderr, "Error writing output: %v\n", err)

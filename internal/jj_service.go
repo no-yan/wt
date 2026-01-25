@@ -11,6 +11,10 @@ const (
 	JjDefaultWorkspace = "default"
 	// JjTrunkRange is the revision range for finding bookmarks between trunk and current
 	JjTrunkRange = "trunk()..@"
+	// jjWorkspaceListTemplate defines the output format for jj workspace list.
+	// Format: name<TAB>commit_id<TAB>path<NEWLINE>
+	// This template is the single source of truth for the expected format.
+	jjWorkspaceListTemplate = `name ++ "\t" ++ working_copy.commit_id().short(8) ++ "\t" ++ working_copy_path ++ "\n"`
 )
 
 type JjService struct {
@@ -26,30 +30,34 @@ func (j *JjService) Type() VCSType {
 	return VCSJj
 }
 
-// ListWorkspaces implements VCSService interface
-func (j *JjService) ListWorkspaces() ([]Workspace, error) {
-	// Use template for parseable output: name, commit_id, path
-	output, err := j.runner.Run("jj workspace list -T 'name ++ \"\\t\" ++ working_copy.commit_id().short(8) ++ \"\\t\" ++ working_copy_path ++ \"\\n\"'")
+// ListWorkspaces implements VCSService interface.
+// Use opts to control what additional information to fetch.
+// Without opts, only basic workspace info is returned (no N+1 queries).
+func (j *JjService) ListWorkspaces(opts ListOptions) ([]Workspace, error) {
+	output, err := j.runner.Run("jj workspace list -T '" + jjWorkspaceListTemplate + "'")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list jj workspaces: %w", err)
 	}
 
 	workspaces := ParseJjWorkspaceList(output)
 
-	// Enrich each workspace with status and bookmarks
+	// Only fetch additional details if requested
 	for i := range workspaces {
-		// Get workspace status
-		statusOutput, err := j.runStatus(workspaces[i].Path)
-		if err != nil {
-			workspaces[i].Status = StatusStale
-		} else {
-			workspaces[i].Status = ParseJjStatus(statusOutput)
+		if opts.IncludeStatus {
+			statusOutput, err := j.runStatus(workspaces[i].Path)
+			if err != nil {
+				workspaces[i].Status = StatusStale
+				workspaces[i].Error = err
+			} else {
+				workspaces[i].Status = ParseJjStatus(statusOutput)
+			}
 		}
 
-		// Get bookmarks in trunk()..@ range for this workspace
-		bookmarks, _ := j.GetBookmarksInRange(workspaces[i].Path, JjTrunkRange)
-		if len(bookmarks) > 0 {
-			workspaces[i].Bookmarks = bookmarks
+		if opts.IncludeLabels {
+			bookmarks, _ := j.GetBookmarksInRange(workspaces[i].Path, JjTrunkRange)
+			if len(bookmarks) > 0 {
+				workspaces[i].Labels = bookmarks
+			}
 		}
 	}
 

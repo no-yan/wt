@@ -26,15 +26,8 @@ Examples:
 		name := args[0]
 		runner := internal.NewExecCommandRunner()
 
-		// Detect VCS type
-		vcsType, err := internal.DetectVCS(".")
+		manager, vcsType, err := internal.CreateWorkspaceManager(runner)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error detecting VCS: %v\n", err)
-			os.Exit(1)
-		}
-
-		// Check if VCS is available
-		if err := internal.CheckVCSAvailable(runner, vcsType); err != nil {
 			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
@@ -45,17 +38,9 @@ Examples:
 			os.Exit(1)
 		}
 
-		var manager internal.WorkspaceManager
 		opts := internal.AddOptions{Revision: addRevision}
-
-		switch vcsType {
-		case internal.VCSGit:
-			gitService := internal.NewGitService(runner)
-			manager = internal.NewWorktreeManager(gitService, runner)
+		if vcsType == internal.VCSGit {
 			opts.Branch = name // For Git, name is the branch
-		case internal.VCSJj:
-			jjService := internal.NewJjService(runner)
-			manager = internal.NewJjWorkspaceManager(jjService)
 		}
 
 		workspacePath, err := manager.AddWorkspace(repoPath, name, opts)

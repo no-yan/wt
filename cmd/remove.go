@@ -22,10 +22,9 @@ Safety checks:
 	Run: func(cmd *cobra.Command, args []string) {
 		runner := internal.NewExecCommandRunner()
 
-		// Detect VCS type
-		vcsType, err := internal.DetectVCS(".")
+		manager, vcsType, err := internal.CreateWorkspaceManager(runner)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error detecting VCS: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -33,16 +32,6 @@ Safety checks:
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error finding repository: %v\n", err)
 			os.Exit(1)
-		}
-
-		var manager internal.WorkspaceManager
-		switch vcsType {
-		case internal.VCSGit:
-			gitService := internal.NewGitService(runner)
-			manager = internal.NewWorktreeManager(gitService, runner)
-		case internal.VCSJj:
-			jjService := internal.NewJjService(runner)
-			manager = internal.NewJjWorkspaceManager(jjService)
 		}
 
 		if len(args) == 1 {

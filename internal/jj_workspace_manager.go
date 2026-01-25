@@ -63,8 +63,9 @@ func (m *JjWorkspaceManager) RemoveWorkspace(repoPath, name string) error {
 		return fmt.Errorf("workspace name cannot be empty")
 	}
 
-	// Get all workspaces to find the target
-	workspaces, err := m.jjService.ListWorkspaces()
+	// Get all workspaces to find the target (need status to check for dirty)
+	opts := ListOptions{IncludeStatus: true}
+	workspaces, err := m.jjService.ListWorkspaces(opts)
 	if err != nil {
 		return fmt.Errorf("failed to list workspaces: %w", err)
 	}
@@ -118,8 +119,9 @@ func (m *JjWorkspaceManager) RemoveMultipleWorkspaces(repoPath string, names []s
 		return fmt.Errorf("at least one workspace name is required")
 	}
 
-	// Get all workspaces once for validation
-	workspaces, err := m.jjService.ListWorkspaces()
+	// Get all workspaces once for validation (need status to check for dirty)
+	opts := ListOptions{IncludeStatus: true}
+	workspaces, err := m.jjService.ListWorkspaces(opts)
 	if err != nil {
 		return fmt.Errorf("failed to list workspaces: %w", err)
 	}

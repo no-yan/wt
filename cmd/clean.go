@@ -26,22 +26,15 @@ Use --force to skip confirmation prompts.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		runner := internal.NewExecCommandRunner()
 
-		// Detect VCS type
-		vcsType, err := internal.DetectVCS(".")
+		service, err := internal.CreateVCSService(runner)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error detecting VCS: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 			os.Exit(1)
 		}
 
-		var service internal.VCSService
-		switch vcsType {
-		case internal.VCSGit:
-			service = internal.NewGitService(runner)
-		case internal.VCSJj:
-			service = internal.NewJjService(runner)
-		}
-
-		workspaces, err := service.ListWorkspaces()
+		// Only need status to detect stale workspaces
+		opts := internal.ListOptions{IncludeStatus: true}
+		workspaces, err := service.ListWorkspaces(opts)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error listing workspaces: %v\n", err)
 			os.Exit(1)
@@ -83,7 +76,7 @@ Use --force to skip confirmation prompts.`,
 		}
 
 		// Clean up stale workspaces
-		if err := pruneStaleWorkspaces(runner, vcsType); err != nil {
+		if err := pruneStaleWorkspaces(runner, service.Type()); err != nil {
 			fmt.Fprintf(os.Stderr, "Error cleaning stale workspaces: %v\n", err)
 			os.Exit(1)
 		}
