@@ -18,6 +18,31 @@ func NewGitService(runner CommandRunner) *GitService {
 	return &GitService{runner: runner}
 }
 
+// Type implements VCSService interface
+func (g *GitService) Type() VCSType {
+	return VCSGit
+}
+
+// ListWorkspaces implements VCSService interface
+func (g *GitService) ListWorkspaces() ([]Workspace, error) {
+	worktrees, err := g.ListWorktrees()
+	if err != nil {
+		return nil, err
+	}
+
+	workspaces := make([]Workspace, len(worktrees))
+	for i, wt := range worktrees {
+		workspaces[i] = Workspace{
+			Name:     wt.Name(),
+			Path:     wt.Path,
+			Revision: wt.Head,
+			Status:   wt.Status,
+			Branch:   wt.Branch,
+		}
+	}
+	return workspaces, nil
+}
+
 func (g *GitService) ListWorktrees() ([]Worktree, error) {
 	output, err := g.runner.Run("git worktree list --porcelain")
 	if err != nil {

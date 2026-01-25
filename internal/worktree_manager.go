@@ -20,6 +20,26 @@ func NewWorktreeManager(gitService *GitService, runner CommandRunner) *WorktreeM
 	}
 }
 
+// AddWorkspace implements WorkspaceManager interface for Git
+func (wm *WorktreeManager) AddWorkspace(repoPath, name string, opts AddOptions) (string, error) {
+	// For Git, name is the branch name
+	branch := name
+	if opts.Branch != "" {
+		branch = opts.Branch
+	}
+	return wm.AddWorktree(repoPath, branch)
+}
+
+// RemoveWorkspace implements WorkspaceManager interface for Git
+func (wm *WorktreeManager) RemoveWorkspace(repoPath, name string) error {
+	return wm.RemoveWorktree(repoPath, name)
+}
+
+// RemoveMultipleWorkspaces implements WorkspaceManager interface for Git
+func (wm *WorktreeManager) RemoveMultipleWorkspaces(repoPath string, names []string) error {
+	return wm.RemoveMultipleWorktrees(repoPath, names)
+}
+
 func (wm *WorktreeManager) AddWorktree(repoPath, branch string) (string, error) {
 	if err := validateBranchName(branch); err != nil {
 		return "", err

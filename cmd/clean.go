@@ -15,41 +15,55 @@ var (
 
 var cleanCmd = &cobra.Command{
 	Use:   "clean",
-	Short: "Clean up stale worktrees",
-	Long: `Clean up stale worktrees that are no longer valid.
+	Short: "Clean up stale workspaces",
+	Long: `Clean up stale workspaces that are no longer valid.
 
-This command removes worktree entries that point to non-existent directories
-or directories that are no longer valid git worktrees.
+For Git: Removes worktree entries that point to non-existent directories.
+For jj: Updates stale workspaces.
 
 Use --dry-run to see what would be cleaned without actually removing anything.
 Use --force to skip confirmation prompts.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		runner := internal.NewExecCommandRunner()
-		service := internal.NewGitService(runner)
 
-		worktrees, err := service.ListWorktrees()
+		// Detect VCS type
+		vcsType, err := internal.DetectVCS(".")
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error listing worktrees: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Error detecting VCS: %v\n", err)
 			os.Exit(1)
 		}
 
-		// Find stale worktrees
-		var staleWorktrees []internal.Worktree
-		for _, wt := range worktrees {
-			if wt.Status == internal.StatusStale {
-				staleWorktrees = append(staleWorktrees, wt)
+		var service internal.VCSService
+		switch vcsType {
+		case internal.VCSGit:
+			service = internal.NewGitService(runner)
+		case internal.VCSJj:
+			service = internal.NewJjService(runner)
+		}
+
+		workspaces, err := service.ListWorkspaces()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "Error listing workspaces: %v\n", err)
+			os.Exit(1)
+		}
+
+		// Find stale workspaces
+		var staleWorkspaces []internal.Workspace
+		for _, ws := range workspaces {
+			if ws.Status == internal.StatusStale {
+				staleWorkspaces = append(staleWorkspaces, ws)
 			}
 		}
 
-		if len(staleWorktrees) == 0 {
-			fmt.Println("No stale worktrees found.")
+		if len(staleWorkspaces) == 0 {
+			fmt.Println("No stale workspaces found.")
 			return
 		}
 
 		// Show what will be cleaned
-		fmt.Printf("Found %d stale worktree(s):\n", len(staleWorktrees))
-		for _, wt := range staleWorktrees {
-			fmt.Printf("  %s -> %s\n", wt.Name(), wt.Path)
+		fmt.Printf("Found %d stale workspace(s):\n", len(staleWorkspaces))
+		for _, ws := range staleWorkspaces {
+			fmt.Printf("  %s -> %s\n", ws.Name, ws.Path)
 		}
 
 		if cleanDryRun {
@@ -68,13 +82,13 @@ Use --force to skip confirmation prompts.`,
 			}
 		}
 
-		// Clean up stale worktrees using git worktree prune
-		if err := pruneStaleWorktrees(runner); err != nil {
-			fmt.Fprintf(os.Stderr, "Error cleaning stale worktrees: %v\n", err)
+		// Clean up stale workspaces
+		if err := pruneStaleWorkspaces(runner, vcsType); err != nil {
+			fmt.Fprintf(os.Stderr, "Error cleaning stale workspaces: %v\n", err)
 			os.Exit(1)
 		}
 
-		fmt.Printf("Cleaned %d stale worktree(s).\n", len(staleWorktrees))
+		fmt.Printf("Cleaned %d stale workspace(s).\n", len(staleWorkspaces))
 	},
 }
 
@@ -83,13 +97,22 @@ func init() {
 	cleanCmd.Flags().BoolVar(&cleanForce, "force", false, "Skip confirmation prompts")
 }
 
-func pruneStaleWorktrees(runner internal.CommandRunner) error {
-	// Use git worktree prune to remove stale worktree entries
-	_, err := runner.Run("git worktree prune")
-	return err
+func pruneStaleWorkspaces(runner internal.CommandRunner, vcsType internal.VCSType) error {
+	switch vcsType {
+	case internal.VCSGit:
+		_, err := runner.Run("git worktree prune")
+		return err
+	case internal.VCSJj:
+		// jj workspace update-stale updates outdated working copies
+		_, err := runner.Run("jj workspace update-stale")
+		return err
+	default:
+		return fmt.Errorf("unsupported VCS type: %s", vcsType)
+	}
 }
 
-func shellescape(s string) string {
-	// Simple shell escaping for paths
-	return "'" + s + "'"
+// Legacy function kept for compatibility
+func pruneStaleWorktrees(runner internal.CommandRunner) error {
+	_, err := runner.Run("git worktree prune")
+	return err
 }
