@@ -102,12 +102,12 @@ func TestJjWorkspaceManager_RemoveWorkspace(t *testing.T) {
 			name:   "remove existing workspace",
 			wsName: "feature",
 			workspaces: []Workspace{
-				{Name: "default", Path: "/repo", Status: StatusClean},
-				{Name: "feature", Path: "/repo/worktrees/feature", Status: StatusClean},
+				{Name: "default", Status: StatusClean},
+				{Name: "feature", Status: StatusClean},
 			},
 			statusOutput: map[string]string{
-				"/repo":                     "",
-				"/repo/worktrees/feature": "",
+				"default": "",
+				"feature": "",
 			},
 			wantErr: false,
 		},
@@ -115,10 +115,10 @@ func TestJjWorkspaceManager_RemoveWorkspace(t *testing.T) {
 			name:   "cannot remove default",
 			wsName: "default",
 			workspaces: []Workspace{
-				{Name: "default", Path: "/repo", Status: StatusClean},
+				{Name: "default", Status: StatusClean},
 			},
 			statusOutput: map[string]string{
-				"/repo": "",
+				"default": "",
 			},
 			wantErr:   true,
 			errSubstr: "cannot remove the default workspace",
@@ -127,10 +127,10 @@ func TestJjWorkspaceManager_RemoveWorkspace(t *testing.T) {
 			name:   "workspace not found",
 			wsName: "nonexistent",
 			workspaces: []Workspace{
-				{Name: "default", Path: "/repo", Status: StatusClean},
+				{Name: "default", Status: StatusClean},
 			},
 			statusOutput: map[string]string{
-				"/repo": "",
+				"default": "",
 			},
 			wantErr:   true,
 			errSubstr: "not found",
@@ -139,10 +139,10 @@ func TestJjWorkspaceManager_RemoveWorkspace(t *testing.T) {
 			name:   "dirty workspace",
 			wsName: "dirty-ws",
 			workspaces: []Workspace{
-				{Name: "dirty-ws", Path: "/repo/worktrees/dirty-ws", Status: StatusDirty},
+				{Name: "dirty-ws", Status: StatusDirty}, // Path will be set based on tmpDir
 			},
 			statusOutput: map[string]string{
-				"/repo/worktrees/dirty-ws": "M modified.txt\n", // Non-empty means dirty
+				"dirty-ws": "M modified.txt\n", // Key is workspace name, path will be computed
 			},
 			wantErr:   true,
 			errSubstr: "uncommitted changes",
@@ -158,11 +158,29 @@ func TestJjWorkspaceManager_RemoveWorkspace(t *testing.T) {
 			}
 			defer os.RemoveAll(tmpDir)
 
+			// Resolve symlinks (macOS /tmp -> /private/var/...)
+			tmpDir, err = filepath.EvalSymlinks(tmpDir)
+			if err != nil {
+				t.Fatalf("failed to eval symlinks: %v", err)
+			}
+
+			// Create .jj directory for repo root detection
+			if err := os.Mkdir(filepath.Join(tmpDir, ".jj"), 0o755); err != nil {
+				t.Fatalf("failed to create .jj: %v", err)
+			}
+
+			// Change to temp directory so findJjRepoRoot can find .jj
+			originalWd, _ := os.Getwd()
+			defer os.Chdir(originalWd)
+			if err := os.Chdir(tmpDir); err != nil {
+				t.Fatalf("failed to chdir: %v", err)
+			}
+
 			// Create a mock that returns the test workspaces
-			listCmd := "jj workspace list -T 'name ++ \"\\t\" ++ working_copy.commit_id().short(8) ++ \"\\t\" ++ working_copy_path ++ \"\\n\"'"
+			listCmd := "jj workspace list -T 'self.name() ++ \"\\t\" ++ self.target().commit_id().short(8) ++ \"\\n\"'"
 			listOutput := ""
 			for _, ws := range tt.workspaces {
-				listOutput += ws.Name + "\tabc123\t" + ws.Path + "\n"
+				listOutput += ws.Name + "\tabc123\n"
 			}
 
 			mockRunner := &jjMockRunner{
@@ -172,14 +190,22 @@ func TestJjWorkspaceManager_RemoveWorkspace(t *testing.T) {
 				errors: map[string]error{},
 			}
 
-			// Add status outputs for each workspace path
-			// Note: shellescape() wraps paths in single quotes
-			for path, statusOut := range tt.statusOutput {
-				statusCmd := "jj -R " + path + " status"
-				mockRunner.outputs[statusCmd] = statusOut
-				// Also add quoted version for paths without special chars
-				statusCmdQuoted := "jj -R '" + path + "' status"
-				mockRunner.outputs[statusCmdQuoted] = statusOut
+			// Add status outputs for each workspace
+			// The key in statusOutput is the workspace name, we need to construct the full path
+			for wsName, statusOut := range tt.statusOutput {
+				// Construct path based on tmpDir (matching ParseJjWorkspaceList logic)
+				var path string
+				if wsName == JjDefaultWorkspace {
+					path = tmpDir
+				} else {
+					path = filepath.Join(tmpDir, "worktrees", wsName)
+				}
+				// shellescape() wraps paths in single quotes only for paths with special chars
+				// For most tmpDir paths, they won't have special chars, so add both versions
+				statusCmd1 := "jj -R " + path + " status"
+				statusCmd2 := "jj -R '" + path + "' status"
+				mockRunner.outputs[statusCmd1] = statusOut
+				mockRunner.outputs[statusCmd2] = statusOut
 			}
 
 			service := NewJjService(mockRunner)

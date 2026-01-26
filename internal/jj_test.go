@@ -5,6 +5,7 @@ import (
 )
 
 func TestParseJjWorkspaceList(t *testing.T) {
+	repoRoot := "/repo"
 	tests := []struct {
 		name   string
 		output string
@@ -16,15 +17,15 @@ func TestParseJjWorkspaceList(t *testing.T) {
 			want:   nil,
 		},
 		{
-			name:   "single workspace",
-			output: "default\tabc12345\t/repo\n",
+			name:   "single workspace (default)",
+			output: "default\tabc12345\n",
 			want: []Workspace{
 				{Name: "default", Revision: "abc12345", Path: "/repo", Status: StatusClean},
 			},
 		},
 		{
 			name:   "multiple workspaces",
-			output: "default\tabc12345\t/repo\nfeature\tdef67890\t/repo/worktrees/feature\n",
+			output: "default\tabc12345\nfeature\tdef67890\n",
 			want: []Workspace{
 				{Name: "default", Revision: "abc12345", Path: "/repo", Status: StatusClean},
 				{Name: "feature", Revision: "def67890", Path: "/repo/worktrees/feature", Status: StatusClean},
@@ -32,7 +33,7 @@ func TestParseJjWorkspaceList(t *testing.T) {
 		},
 		{
 			name:   "output with extra whitespace",
-			output: "  default\tabc12345\t/repo  \n",
+			output: "  default\tabc12345  \n",
 			want: []Workspace{
 				{Name: "default", Revision: "abc12345", Path: "/repo", Status: StatusClean},
 			},
@@ -41,7 +42,7 @@ func TestParseJjWorkspaceList(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := ParseJjWorkspaceList(tt.output)
+			got := ParseJjWorkspaceList(tt.output, repoRoot)
 
 			if len(got) != len(tt.want) {
 				t.Errorf("ParseJjWorkspaceList() returned %d workspaces, want %d", len(got), len(tt.want))

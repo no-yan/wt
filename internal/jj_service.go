@@ -12,9 +12,10 @@ const (
 	// JjTrunkRange is the revision range for finding bookmarks between trunk and current
 	JjTrunkRange = "trunk()..@"
 	// jjWorkspaceListTemplate defines the output format for jj workspace list.
-	// Format: name<TAB>commit_id<TAB>path<NEWLINE>
-	// This template is the single source of truth for the expected format.
-	jjWorkspaceListTemplate = `name ++ "\t" ++ working_copy.commit_id().short(8) ++ "\t" ++ working_copy_path ++ "\n"`
+	// Format: name<TAB>commit_id<NEWLINE>
+	// Note: Path is not available from jj workspace list template,
+	// so we construct it from repo root + "worktrees/" + name
+	jjWorkspaceListTemplate = `self.name() ++ "\t" ++ self.target().commit_id().short(8) ++ "\n"`
 )
 
 type JjService struct {
@@ -34,12 +35,18 @@ func (j *JjService) Type() VCSType {
 // Use opts to control what additional information to fetch.
 // Without opts, only basic workspace info is returned (no N+1 queries).
 func (j *JjService) ListWorkspaces(opts ListOptions) ([]Workspace, error) {
+	// Get repo root to construct workspace paths
+	repoRoot, err := GetRepoRoot(j.runner, VCSJj)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get repo root: %w", err)
+	}
+
 	output, err := j.runner.Run("jj workspace list -T '" + jjWorkspaceListTemplate + "'")
 	if err != nil {
 		return nil, fmt.Errorf("failed to list jj workspaces: %w", err)
 	}
 
-	workspaces := ParseJjWorkspaceList(output)
+	workspaces := ParseJjWorkspaceList(output, repoRoot)
 
 	// Only fetch additional details if requested
 	for i := range workspaces {

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os/exec"
 	"strings"
+
+	"github.com/kballard/go-shellquote"
 )
 
 type CommandRunner interface {
@@ -110,8 +112,20 @@ func NewExecCommandRunner() *ExecCommandRunner {
 	return &ExecCommandRunner{}
 }
 
+// TODO: Consider refactoring CommandRunner interface to accept arguments separately
+// instead of a single command string. This would eliminate the need for shell parsing
+// and be more type-safe. Example:
+//
+//	type CommandRunner interface {
+//	    Run(cmd string, args ...string) (string, error)
+//	}
+//
+// This would require updates to all callers but would be cleaner long-term.
 func (e *ExecCommandRunner) Run(command string) (string, error) {
-	parts := strings.Fields(command)
+	parts, err := shellquote.Split(command)
+	if err != nil {
+		return "", fmt.Errorf("failed to parse command: %w", err)
+	}
 	if len(parts) == 0 {
 		return "", fmt.Errorf("empty command")
 	}

@@ -2,6 +2,8 @@ package internal
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -37,13 +39,13 @@ func TestJjService_ListWorkspaces(t *testing.T) {
 	}{
 		{
 			name:       "single workspace",
-			listOutput: "default\tabc12345\t/repo\n",
+			listOutput: "default\tabc12345\n",
 			wantLen:    1,
 			wantErr:    false,
 		},
 		{
 			name:       "multiple workspaces",
-			listOutput: "default\tabc12345\t/repo\nfeature\tdef67890\t/repo/worktrees/feature\n",
+			listOutput: "default\tabc12345\nfeature\tdef67890\n",
 			wantLen:    2,
 			wantErr:    false,
 		},
@@ -57,7 +59,31 @@ func TestJjService_ListWorkspaces(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			listCmd := "jj workspace list -T 'name ++ \"\\t\" ++ working_copy.commit_id().short(8) ++ \"\\t\" ++ working_copy_path ++ \"\\n\"'"
+			// Create temp directory with .jj for repo root detection
+			tmpDir, err := os.MkdirTemp("", "jj-service-test")
+			if err != nil {
+				t.Fatalf("failed to create temp dir: %v", err)
+			}
+			defer os.RemoveAll(tmpDir)
+
+			// Resolve symlinks (macOS /tmp -> /private/var/...)
+			tmpDir, err = filepath.EvalSymlinks(tmpDir)
+			if err != nil {
+				t.Fatalf("failed to eval symlinks: %v", err)
+			}
+
+			if err := os.Mkdir(filepath.Join(tmpDir, ".jj"), 0o755); err != nil {
+				t.Fatalf("failed to create .jj: %v", err)
+			}
+
+			// Change to temp directory so findJjRepoRoot can find .jj
+			originalWd, _ := os.Getwd()
+			defer os.Chdir(originalWd)
+			if err := os.Chdir(tmpDir); err != nil {
+				t.Fatalf("failed to chdir: %v", err)
+			}
+
+			listCmd := "jj workspace list -T 'self.name() ++ \"\\t\" ++ self.target().commit_id().short(8) ++ \"\\n\"'"
 			mockRunner := &jjMockRunner{
 				outputs: map[string]string{
 					listCmd: tt.listOutput,

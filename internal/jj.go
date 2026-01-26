@@ -1,35 +1,44 @@
 package internal
 
 import (
+	"path/filepath"
 	"strings"
 )
 
 // ParseJjWorkspaceList parses the output of jj workspace list command.
 // Expected format (tab-separated):
-// workspace-name\tworking-copy-commit-id\tpath
-func ParseJjWorkspaceList(output string) []Workspace {
+// workspace-name\tworking-copy-commit-id
+// Path is constructed as repoRoot/worktrees/name (or repoRoot for default workspace)
+func ParseJjWorkspaceList(output, repoRoot string) []Workspace {
 	var workspaces []Workspace
 
 	lines := strings.Split(output, "\n")
 	for _, line := range lines {
-		// Only trim leading/trailing whitespace from the line itself,
-		// not from individual fields (to preserve spaces in paths)
 		line = strings.TrimSpace(line)
 		if line == "" {
 			continue
 		}
 
 		parts := strings.Split(line, "\t")
-		if len(parts) < 3 {
+		if len(parts) < 2 {
 			continue
 		}
 
-		// Trim whitespace from name and revision, but preserve path as-is
-		// (except trailing whitespace which is likely from output formatting)
+		name := strings.TrimSpace(parts[0])
+		revision := strings.TrimSpace(parts[1])
+
+		// Construct workspace path
+		var path string
+		if name == JjDefaultWorkspace {
+			path = repoRoot
+		} else {
+			path = filepath.Join(repoRoot, "worktrees", name)
+		}
+
 		workspaces = append(workspaces, Workspace{
-			Name:     strings.TrimSpace(parts[0]),
-			Revision: strings.TrimSpace(parts[1]),
-			Path:     strings.TrimRight(parts[2], " \t"),
+			Name:     name,
+			Revision: revision,
+			Path:     path,
 			Status:   StatusClean, // Will be updated by status check
 		})
 	}

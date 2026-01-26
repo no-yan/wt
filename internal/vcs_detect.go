@@ -52,13 +52,33 @@ func GetRepoRoot(runner CommandRunner, vcsType VCSType) (string, error) {
 		}
 		return strings.TrimSpace(output), nil
 	case VCSJj:
-		output, err := runner.Run("jj workspace root")
-		if err != nil {
-			return "", fmt.Errorf("not in a jj repository: %w", err)
-		}
-		return strings.TrimSpace(output), nil
+		// jj doesn't have a command to get the repository root (where .jj is located).
+		// "jj root" / "jj workspace root" returns the current workspace's root,
+		// not the repository root. So we find .jj directory by walking up.
+		return findJjRepoRoot()
 	default:
 		return "", fmt.Errorf("unsupported VCS type: %s", vcsType)
+	}
+}
+
+// findJjRepoRoot finds the jj repository root by looking for .jj directory
+func findJjRepoRoot() (string, error) {
+	dir, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("failed to get current directory: %w", err)
+	}
+
+	for {
+		jjPath := filepath.Join(dir, ".jj")
+		if info, err := os.Stat(jjPath); err == nil && info.IsDir() {
+			return dir, nil
+		}
+
+		parent := filepath.Dir(dir)
+		if parent == dir {
+			return "", fmt.Errorf("not in a jj repository")
+		}
+		dir = parent
 	}
 }
 

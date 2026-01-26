@@ -117,56 +117,78 @@ func TestDetectVCS_WalksUpDirectory(t *testing.T) {
 }
 
 func TestGetRepoRoot(t *testing.T) {
-	tests := []struct {
-		name      string
-		vcsType   VCSType
-		cmdOutput string
-		want      string
-		wantErr   bool
-	}{
-		{
-			name:      "git repo root",
-			vcsType:   VCSGit,
-			cmdOutput: "/home/user/project\n",
-			want:      "/home/user/project",
-			wantErr:   false,
-		},
-		{
-			name:      "jj workspace root",
-			vcsType:   VCSJj,
-			cmdOutput: "/home/user/jj-project\n",
-			want:      "/home/user/jj-project",
-			wantErr:   false,
-		},
-		{
-			name:      "path with trailing whitespace",
-			vcsType:   VCSGit,
-			cmdOutput: "/path/with/spaces  \n",
-			want:      "/path/with/spaces",
-			wantErr:   false,
-		},
+	t.Run("git repo root", func(t *testing.T) {
+		mockRunner := &mockCommandRunner{
+			outputs: map[string]string{
+				"git rev-parse --show-toplevel": "/home/user/project\n",
+			},
+		}
+
+		got, err := GetRepoRoot(mockRunner, VCSGit)
+		if err != nil {
+			t.Errorf("GetRepoRoot() unexpected error: %v", err)
+		}
+		if got != "/home/user/project" {
+			t.Errorf("GetRepoRoot() = %q, want %q", got, "/home/user/project")
+		}
+	})
+
+	t.Run("git path with trailing whitespace", func(t *testing.T) {
+		mockRunner := &mockCommandRunner{
+			outputs: map[string]string{
+				"git rev-parse --show-toplevel": "/path/with/spaces  \n",
+			},
+		}
+
+		got, err := GetRepoRoot(mockRunner, VCSGit)
+		if err != nil {
+			t.Errorf("GetRepoRoot() unexpected error: %v", err)
+		}
+		if got != "/path/with/spaces" {
+			t.Errorf("GetRepoRoot() = %q, want %q", got, "/path/with/spaces")
+		}
+	})
+}
+
+func TestGetRepoRoot_Jj(t *testing.T) {
+	// jj uses file system traversal to find .jj directory
+	tmpDir, err := os.MkdirTemp("", "jj-repo-root-test")
+	if err != nil {
+		t.Fatalf("failed to create temp dir: %v", err)
+	}
+	defer os.RemoveAll(tmpDir)
+
+	// Resolve symlinks (macOS /tmp -> /private/var/...)
+	tmpDir, err = filepath.EvalSymlinks(tmpDir)
+	if err != nil {
+		t.Fatalf("failed to eval symlinks: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			mockRunner := &mockCommandRunner{
-				outputs: map[string]string{
-					"git rev-parse --show-toplevel": tt.cmdOutput,
-					"jj workspace root":             tt.cmdOutput,
-				},
-			}
+	// Create .jj directory
+	if err := os.Mkdir(filepath.Join(tmpDir, ".jj"), 0o755); err != nil {
+		t.Fatalf("failed to create .jj: %v", err)
+	}
 
-			got, err := GetRepoRoot(mockRunner, tt.vcsType)
+	// Create nested workspace directory
+	workspaceDir := filepath.Join(tmpDir, "worktrees", "feature")
+	if err := os.MkdirAll(workspaceDir, 0o755); err != nil {
+		t.Fatalf("failed to create workspace dir: %v", err)
+	}
 
-			if (err != nil) != tt.wantErr {
-				t.Errorf("GetRepoRoot() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
+	// Change to workspace directory
+	originalWd, _ := os.Getwd()
+	defer os.Chdir(originalWd)
+	if err := os.Chdir(workspaceDir); err != nil {
+		t.Fatalf("failed to change to workspace dir: %v", err)
+	}
 
-			if got != tt.want {
-				t.Errorf("GetRepoRoot() = %q, want %q", got, tt.want)
-			}
-		})
+	// GetRepoRoot should find the repo root (where .jj is)
+	got, err := GetRepoRoot(nil, VCSJj)
+	if err != nil {
+		t.Errorf("GetRepoRoot() unexpected error: %v", err)
+	}
+	if got != tmpDir {
+		t.Errorf("GetRepoRoot() = %q, want %q", got, tmpDir)
 	}
 }
 

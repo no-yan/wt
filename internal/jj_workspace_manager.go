@@ -121,7 +121,7 @@ func (m *JjWorkspaceManager) RemoveMultipleWorkspaces(repoPath string, names []s
 	}
 
 	// Get all workspaces once for validation (need status to check for dirty)
-	opts := ListOptions{IncludeStatus: true}
+	opts := ListOptions{}
 	workspaces, err := m.jjService.ListWorkspaces(opts)
 	if err != nil {
 		return fmt.Errorf("failed to list workspaces: %w", err)
