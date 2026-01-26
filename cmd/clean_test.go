@@ -9,20 +9,20 @@ import (
 func TestCleanCommand(t *testing.T) {
 	tests := []struct {
 		name      string
-		worktrees []internal.Worktree
+		worktrees []internal.Workspace
 		wantFound int
 	}{
 		{
 			name: "no stale worktrees",
-			worktrees: []internal.Worktree{
+			worktrees: []internal.Workspace{
 				{
 					Path:   "/repo",
-					Branch: "main",
+					Name: "main",
 					Status: internal.StatusClean,
 				},
 				{
 					Path:   "/repo/worktrees/feature-test",
-					Branch: "feature/test",
+					Name: "feature/test",
 					Status: internal.StatusDirty,
 				},
 			},
@@ -30,15 +30,15 @@ func TestCleanCommand(t *testing.T) {
 		},
 		{
 			name: "one stale worktree",
-			worktrees: []internal.Worktree{
+			worktrees: []internal.Workspace{
 				{
 					Path:   "/repo",
-					Branch: "main",
+					Name: "main",
 					Status: internal.StatusClean,
 				},
 				{
 					Path:   "/repo/worktrees/feature-test",
-					Branch: "feature/test",
+					Name: "feature/test",
 					Status: internal.StatusStale,
 				},
 			},
@@ -46,20 +46,20 @@ func TestCleanCommand(t *testing.T) {
 		},
 		{
 			name: "multiple stale worktrees",
-			worktrees: []internal.Worktree{
+			worktrees: []internal.Workspace{
 				{
 					Path:   "/repo",
-					Branch: "main",
+					Name: "main",
 					Status: internal.StatusClean,
 				},
 				{
 					Path:   "/repo/worktrees/feature-test1",
-					Branch: "feature/test1",
+					Name: "feature/test1",
 					Status: internal.StatusStale,
 				},
 				{
 					Path:   "/repo/worktrees/feature-test2",
-					Branch: "feature/test2",
+					Name: "feature/test2",
 					Status: internal.StatusStale,
 				},
 			},

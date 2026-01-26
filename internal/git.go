@@ -1,16 +1,17 @@
 package internal
 
 import (
+	"path/filepath"
 	"strings"
 )
 
-func ParseWorktreeList(output string) []Worktree {
+func ParseWorktreeList(output string) []Workspace {
 	if strings.TrimSpace(output) == "" {
-		return []Worktree{}
+		return []Workspace{}
 	}
 
 	worktreeBlocks := strings.Split(strings.TrimSpace(output), "\n\n")
-	worktrees := make([]Worktree, 0, len(worktreeBlocks))
+	workspaces := make([]Workspace, 0, len(worktreeBlocks))
 
 	for _, block := range worktreeBlocks {
 		block = strings.TrimSpace(block)
@@ -18,16 +19,16 @@ func ParseWorktreeList(output string) []Worktree {
 			continue
 		}
 
-		worktree := parseWorktreeBlock(block)
-		if worktree != nil {
-			worktrees = append(worktrees, *worktree)
+		workspace := parseWorktreeBlock(block)
+		if workspace != nil {
+			workspaces = append(workspaces, *workspace)
 		}
 	}
 
-	return worktrees
+	return workspaces
 }
 
-func parseWorktreeBlock(block string) *Worktree {
+func parseWorktreeBlock(block string) *Workspace {
 	lines := strings.Split(block, "\n")
 	if len(lines) < 2 {
 		return nil
@@ -57,11 +58,20 @@ func parseWorktreeBlock(block string) *Worktree {
 		return nil
 	}
 
-	return &Worktree{
-		Path:   path,
-		Head:   head,
-		Branch: branch,
-		Status: StatusClean,
+	// Calculate workspace name
+	name := branch
+	if strings.Contains(path, "/worktrees/") {
+		name = filepath.Base(path)
+	} else {
+		name = BranchToWorktreeName(branch)
+	}
+
+	return &Workspace{
+		Name:     name,
+		Path:     path,
+		Revision: head,
+		Labels:   []string{branch},
+		Status:   StatusClean,
 	}
 }
 

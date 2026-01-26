@@ -39,10 +39,6 @@ Examples:
 		}
 
 		opts := internal.AddOptions{Revision: addRevision}
-		if vcsType == internal.VCSGit {
-			opts.Branch = name // For Git, name is the branch
-		}
-
 		workspacePath, err := manager.AddWorkspace(repoPath, name, opts)
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error adding workspace: %v\n", err)

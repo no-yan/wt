@@ -121,7 +121,7 @@ func CreateWorkspaceManager(runner CommandRunner) (WorkspaceManager, VCSType, er
 		return NewWorktreeManager(gitService, runner), vcsType, nil
 	case VCSJj:
 		jjService := NewJjService(runner)
-		return NewJjWorkspaceManager(jjService), vcsType, nil
+		return NewJjWorkspaceManager(jjService, runner), vcsType, nil
 	default:
 		return nil, "", fmt.Errorf("unsupported VCS type: %s", vcsType)
 	}

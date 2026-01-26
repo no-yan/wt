@@ -296,9 +296,9 @@ func TestValidateBranchName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateBranchName(tt.branch)
+			err := ValidateName(tt.branch)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("validateBranchName() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("ValidateName() error = %v, wantErr %v", err, tt.wantErr)
 			}
 		})
 	}
@@ -345,7 +345,7 @@ func TestWorktreeManager_RemoveWorktree(t *testing.T) {
 		name      string
 		repoPath  string
 		target    string
-		worktrees []Worktree
+		worktrees []Workspace
 		wantErr   bool
 		errMsg    string
 	}{
@@ -353,15 +353,17 @@ func TestWorktreeManager_RemoveWorktree(t *testing.T) {
 			name:     "remove valid worktree",
 			repoPath: "/repo",
 			target:   "feature-auth",
-			worktrees: []Worktree{
+			worktrees: []Workspace{
 				{
+					Name:   "main",
 					Path:   "/repo",
-					Branch: "main",
+					Labels: []string{"main"},
 					Status: StatusClean,
 				},
 				{
+					Name:   "feature-auth",
 					Path:   "/repo/worktrees/feature-auth",
-					Branch: "feature/auth",
+					Labels: []string{"feature/auth"},
 					Status: StatusClean,
 				},
 			},
@@ -371,10 +373,11 @@ func TestWorktreeManager_RemoveWorktree(t *testing.T) {
 			name:     "cannot remove main worktree",
 			repoPath: "/repo",
 			target:   "main",
-			worktrees: []Worktree{
+			worktrees: []Workspace{
 				{
+					Name:   "main",
 					Path:   "/repo",
-					Branch: "main",
+					Labels: []string{"main"},
 					Status: StatusClean,
 				},
 			},
@@ -385,10 +388,11 @@ func TestWorktreeManager_RemoveWorktree(t *testing.T) {
 			name:     "cannot remove dirty worktree",
 			repoPath: "/repo",
 			target:   "feature-auth",
-			worktrees: []Worktree{
+			worktrees: []Workspace{
 				{
+					Name:   "feature-auth",
 					Path:   "/repo/worktrees/feature-auth",
-					Branch: "feature/auth",
+					Labels: []string{"feature/auth"},
 					Status: StatusDirty,
 				},
 			},
@@ -399,7 +403,7 @@ func TestWorktreeManager_RemoveWorktree(t *testing.T) {
 			name:      "worktree not found",
 			repoPath:  "/repo",
 			target:    "nonexistent",
-			worktrees: []Worktree{},
+			worktrees: []Workspace{},
 			wantErr:   true,
 			errMsg:    "not found",
 		},
@@ -426,7 +430,7 @@ func TestWorktreeManager_RemoveWorktree(t *testing.T) {
 			// Add remove command mock for successful cases
 			if !tt.wantErr {
 				for _, wt := range tt.worktrees {
-					if wt.Name() == tt.target {
+					if wt.Name == tt.target {
 						mockRunner.outputs["git -C "+tt.repoPath+" worktree remove "+wt.Path] = ""
 						break
 					}
@@ -450,14 +454,18 @@ func TestWorktreeManager_RemoveWorktree(t *testing.T) {
 	}
 }
 
-func generateMockWorktreeOutput(worktrees []Worktree) string {
-	if len(worktrees) == 0 {
+func generateMockWorktreeOutput(workspaces []Workspace) string {
+	if len(workspaces) == 0 {
 		return ""
 	}
 
 	var parts []string
-	for _, wt := range worktrees {
-		part := fmt.Sprintf("worktree %s\nHEAD abc123\nbranch refs/heads/%s", wt.Path, wt.Branch)
+	for _, ws := range workspaces {
+		branch := ""
+		if len(ws.Labels) > 0 {
+			branch = ws.Labels[0]
+		}
+		part := fmt.Sprintf("worktree %s\nHEAD abc123\nbranch refs/heads/%s", ws.Path, branch)
 		parts = append(parts, part)
 	}
 	return strings.Join(parts, "\n\n")

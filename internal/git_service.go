@@ -30,20 +30,12 @@ func (g *GitService) ListWorkspaces(opts ListOptions) ([]Workspace, error) {
 		return nil, err
 	}
 
-	worktrees := ParseWorktreeList(output)
-	workspaces := make([]Workspace, len(worktrees))
+	workspaces := ParseWorktreeList(output)
 
-	for i, wt := range worktrees {
-		workspaces[i] = Workspace{
-			Name:     wt.Name(),
-			Path:     wt.Path,
-			Revision: wt.Head,
-			Labels:   []string{wt.Branch}, // Git branch as label
-		}
-
-		// Only fetch status if requested
-		if opts.IncludeStatus {
-			statusOutput, err := g.runner.Run("git -C " + wt.Path + " status --porcelain")
+	// Only fetch status if requested
+	if opts.IncludeStatus {
+		for i := range workspaces {
+			statusOutput, err := g.runner.Run("git -C " + workspaces[i].Path + " status --porcelain")
 			if err != nil {
 				workspaces[i].Status = StatusStale
 				workspaces[i].Error = err
@@ -54,26 +46,6 @@ func (g *GitService) ListWorkspaces(opts ListOptions) ([]Workspace, error) {
 	}
 
 	return workspaces, nil
-}
-
-func (g *GitService) ListWorktrees() ([]Worktree, error) {
-	output, err := g.runner.Run("git worktree list --porcelain")
-	if err != nil {
-		return nil, err
-	}
-
-	worktrees := ParseWorktreeList(output)
-
-	for i := range worktrees {
-		statusOutput, err := g.runner.Run("git -C " + worktrees[i].Path + " status --porcelain")
-		if err != nil {
-			worktrees[i].Status = StatusStale
-		} else {
-			worktrees[i].Status = ParseWorktreeStatus(statusOutput)
-		}
-	}
-
-	return worktrees, nil
 }
 
 func (g *GitService) GetDetailedStatus(worktreePath string) ([]string, error) {

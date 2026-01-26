@@ -85,14 +85,14 @@ func TestCleanIntegration(t *testing.T) {
 		}
 
 		// Verify worktree exists and is clean
-		worktrees, err := gitService.ListWorktrees()
+		worktrees, err := gitService.ListWorkspaces(internal.ListOptions{IncludeStatus: true})
 		if err != nil {
 			t.Fatalf("Failed to list worktrees: %v", err)
 		}
 
-		var staleWorktree *internal.Worktree
+		var staleWorktree *internal.Workspace
 		for _, wt := range worktrees {
-			if wt.Name() == "feature-stale-test" {
+			if wt.Name == "feature-stale-test" {
 				staleWorktree = &wt
 				break
 			}
@@ -116,14 +116,14 @@ func TestCleanIntegration(t *testing.T) {
 
 	t.Run("Detect stale worktree", func(t *testing.T) {
 		// List worktrees - the removed directory should now be detected as stale
-		worktrees, err := gitService.ListWorktrees()
+		worktrees, err := gitService.ListWorkspaces(internal.ListOptions{IncludeStatus: true})
 		if err != nil {
 			t.Fatalf("Failed to list worktrees: %v", err)
 		}
 
-		var staleWorktree *internal.Worktree
+		var staleWorktree *internal.Workspace
 		for _, wt := range worktrees {
-			if wt.Name() == "feature-stale-test" {
+			if wt.Name == "feature-stale-test" {
 				staleWorktree = &wt
 				break
 			}
@@ -140,14 +140,14 @@ func TestCleanIntegration(t *testing.T) {
 
 	t.Run("Clean stale worktree", func(t *testing.T) {
 		// Get the stale worktree path
-		worktrees, err := gitService.ListWorktrees()
+		worktrees, err := gitService.ListWorkspaces(internal.ListOptions{IncludeStatus: true})
 		if err != nil {
 			t.Fatalf("Failed to list worktrees: %v", err)
 		}
 
-		var staleWorktree *internal.Worktree
+		var staleWorktree *internal.Workspace
 		for _, wt := range worktrees {
-			if wt.Name() == "feature-stale-test" && wt.Status == internal.StatusStale {
+			if wt.Name == "feature-stale-test" && wt.Status == internal.StatusStale {
 				staleWorktree = &wt
 				break
 			}
@@ -163,13 +163,13 @@ func TestCleanIntegration(t *testing.T) {
 		}
 
 		// Verify the worktree is no longer listed
-		worktrees, err = gitService.ListWorktrees()
+		worktrees, err = gitService.ListWorkspaces(internal.ListOptions{IncludeStatus: true})
 		if err != nil {
 			t.Fatalf("Failed to list worktrees after cleaning: %v", err)
 		}
 
 		for _, wt := range worktrees {
-			if wt.Name() == "feature-stale-test" {
+			if wt.Name == "feature-stale-test" {
 				t.Error("Stale worktree should have been removed from git worktree list")
 			}
 		}

@@ -39,8 +39,7 @@ type WorkspaceManager interface {
 	RemoveMultipleWorkspaces(repoPath string, names []string) error
 }
 
-// AddOptions provides VCS-specific options for workspace creation
+// AddOptions provides optional parameters for workspace creation
 type AddOptions struct {
-	Branch   string // Git: branch name (required)
-	Revision string // jj: base revision (optional)
+	Revision string // Base revision (optional, for both Git and jj)
 }

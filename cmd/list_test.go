@@ -10,16 +10,17 @@ import (
 func TestListCommand(t *testing.T) {
 	tests := []struct {
 		name      string
-		worktrees []internal.Worktree
+		worktrees []internal.Workspace
 		want      string
 	}{
 		{
 			name: "single clean worktree",
-			worktrees: []internal.Worktree{
+			worktrees: []internal.Workspace{
 				{
 					Path:   "/repo",
-					Head:   "abc123",
-					Branch: "main",
+					Revision:   "abc123",
+					Name: "main",
+			Labels: []string{"main"},
 					Status: internal.StatusClean,
 				},
 			},
@@ -27,17 +28,19 @@ func TestListCommand(t *testing.T) {
 		},
 		{
 			name: "multiple worktrees mixed status",
-			worktrees: []internal.Worktree{
+			worktrees: []internal.Workspace{
 				{
 					Path:   "/repo",
-					Head:   "abc123",
-					Branch: "main",
+					Revision:   "abc123",
+					Name: "main",
+			Labels: []string{"main"},
 					Status: internal.StatusClean,
 				},
 				{
 					Path:   "/repo/worktrees/feature-auth",
-					Head:   "def456",
-					Branch: "feature/auth",
+					Revision:   "def456",
+					Name: "feature-auth",
+				Labels: []string{"feature/auth"},
 					Status: internal.StatusDirty,
 				},
 			},
@@ -48,10 +51,10 @@ func TestListCommand(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			var output bytes.Buffer
-			formatWorktreeList(tt.worktrees, &output)
+			formatWorkspaceList(tt.worktrees, &output, internal.VCSGit)
 
 			if got := output.String(); got != tt.want {
-				t.Errorf("formatWorktreeList() = %q, want %q", got, tt.want)
+				t.Errorf("formatWorkspaceList() = %q, want %q", got, tt.want)
 			}
 		})
 	}
@@ -59,7 +62,7 @@ func TestListCommand(t *testing.T) {
 
 func TestFormatWorktreeList_EmptySlice(t *testing.T) {
 	var buf bytes.Buffer
-	formatWorktreeList([]internal.Worktree{}, &buf)
+	formatWorkspaceList([]internal.Workspace{}, &buf, internal.VCSGit)
 	
 	output := buf.String()
 	if output != "" {
@@ -68,29 +71,32 @@ func TestFormatWorktreeList_EmptySlice(t *testing.T) {
 }
 
 func TestFormatWorktreeList_AlignedOutput(t *testing.T) {
-	worktrees := []internal.Worktree{
+	worktrees := []internal.Workspace{
 		{
 			Path:   "/repo",
-			Head:   "abc123",
-			Branch: "main",
+			Revision:   "abc123",
+			Name: "main",
+			Labels: []string{"main"},
 			Status: internal.StatusClean,
 		},
 		{
 			Path:   "/repo/worktrees/feature-long-name",
-			Head:   "def456",
-			Branch: "feature/long-name",
+			Revision:   "def456",
+			Name: "feature-long-name",
+				Labels: []string{"feature/long-name"},
 			Status: internal.StatusDirty,
 		},
 		{
 			Path:   "/repo/worktrees/fix",
-			Head:   "ghi789",
-			Branch: "fix/bug",
+			Revision:   "ghi789",
+			Name: "fix",
+				Labels: []string{"fix/bug"},
 			Status: internal.StatusStale,
 		},
 	}
 
 	var buf bytes.Buffer
-	formatWorktreeList(worktrees, &buf)
+	formatWorkspaceList(worktrees, &buf, internal.VCSGit)
 
 	output := buf.String()
 	
@@ -102,35 +108,40 @@ func TestFormatWorktreeList_AlignedOutput(t *testing.T) {
 		"fix                /repo/worktrees/fix                (stale)\n"
 	
 	if output != expected {
-		t.Errorf("formatWorktreeList() output not aligned:\nGot:\n%q\nWant:\n%q", output, expected)
+		t.Errorf("formatWorkspaceList() output not aligned:\nGot:\n%q\nWant:\n%q", output, expected)
 	}
 }
 
 func TestFormatWorktreeListVerbose_AlignedOutput(t *testing.T) {
-	worktrees := []internal.Worktree{
+	worktrees := []internal.Workspace{
 		{
 			Path:   "/repo",
-			Head:   "abc123",
-			Branch: "main",
+			Revision:   "abc123",
+			Name: "main",
+			Labels: []string{"main"},
 			Status: internal.StatusClean,
 		},
 		{
 			Path:   "/repo/worktrees/feature-long-name",
-			Head:   "def456",
-			Branch: "feature/long-name",
+			Revision:   "def456",
+			Name: "feature-long-name",
+				Labels: []string{"feature/long-name"},
 			Status: internal.StatusClean, // Changed to clean to avoid nil service issue
 		},
 		{
 			Path:   "/repo/worktrees/fix",
-			Head:   "ghi789",
-			Branch: "fix/bug",
+			Revision:   "ghi789",
+			Name: "fix",
+				Labels: []string{"fix/bug"},
 			Status: internal.StatusStale,
 		},
 	}
 
 	var buf bytes.Buffer
-	// Pass nil for service as we won't trigger detailed status in this test
-	formatWorktreeListVerbose(worktrees, &buf, nil)
+	// Create a mock service for testing
+	mockRunner := &mockCommandRunner{outputs: make(map[string]string)}
+	service := internal.NewGitService(mockRunner)
+	formatWorkspaceListVerbose(worktrees, &buf, service)
 
 	output := buf.String()
 
@@ -142,6 +153,17 @@ func TestFormatWorktreeListVerbose_AlignedOutput(t *testing.T) {
 		"fix                fix/bug            /repo/worktrees/fix                (stale)\n\n"
 
 	if output != expected {
-		t.Errorf("formatWorktreeListVerbose() output not aligned:\nGot:\n%q\nWant:\n%q", output, expected)
+		t.Errorf("formatWorkspaceListVerbose() output not aligned:\nGot:\n%q\nWant:\n%q", output, expected)
 	}
+}
+
+type mockCommandRunner struct {
+	outputs map[string]string
+}
+
+func (m *mockCommandRunner) Run(command string) (string, error) {
+	if output, ok := m.outputs[command]; ok {
+		return output, nil
+	}
+	return "", nil
 }

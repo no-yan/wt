@@ -4,26 +4,27 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 type JjWorkspaceManager struct {
 	jjService *JjService
+	runner    CommandRunner
 }
 
-func NewJjWorkspaceManager(jjService *JjService) *JjWorkspaceManager {
+func NewJjWorkspaceManager(jjService *JjService, runner CommandRunner) *JjWorkspaceManager {
 	return &JjWorkspaceManager{
 		jjService: jjService,
+		runner:    runner,
 	}
 }
 
 // AddWorkspace implements WorkspaceManager interface for jj
 func (m *JjWorkspaceManager) AddWorkspace(repoPath, name string, opts AddOptions) (string, error) {
-	if err := validateWorkspaceName(name); err != nil {
+	if err := ValidateName(name); err != nil {
 		return "", err
 	}
 
-	if err := validatePath(repoPath); err != nil {
+	if err := ValidatePath(repoPath); err != nil {
 		return "", fmt.Errorf("invalid repository path: %w", err)
 	}
 
@@ -46,7 +47,7 @@ func (m *JjWorkspaceManager) AddWorkspace(repoPath, name string, opts AddOptions
 		cmd += fmt.Sprintf(" --revision %s", shellescape(opts.Revision))
 	}
 
-	if _, err := m.jjService.Run(cmd); err != nil {
+	if _, err := m.runner.Run(cmd); err != nil {
 		return "", fmt.Errorf("jj workspace add failed: %w", err)
 	}
 
@@ -55,7 +56,7 @@ func (m *JjWorkspaceManager) AddWorkspace(repoPath, name string, opts AddOptions
 
 // RemoveWorkspace implements WorkspaceManager interface for jj
 func (m *JjWorkspaceManager) RemoveWorkspace(repoPath, name string) error {
-	if err := validatePath(repoPath); err != nil {
+	if err := ValidatePath(repoPath); err != nil {
 		return fmt.Errorf("invalid repository path: %w", err)
 	}
 
@@ -97,7 +98,7 @@ func (m *JjWorkspaceManager) RemoveWorkspace(repoPath, name string) error {
 		shellescape(repoPath),
 		shellescape(name))
 
-	if _, err := m.jjService.Run(forgetCmd); err != nil {
+	if _, err := m.runner.Run(forgetCmd); err != nil {
 		return fmt.Errorf("jj workspace forget failed: %w", err)
 	}
 
@@ -111,7 +112,7 @@ func (m *JjWorkspaceManager) RemoveWorkspace(repoPath, name string) error {
 
 // RemoveMultipleWorkspaces implements WorkspaceManager interface for jj
 func (m *JjWorkspaceManager) RemoveMultipleWorkspaces(repoPath string, names []string) error {
-	if err := validatePath(repoPath); err != nil {
+	if err := ValidatePath(repoPath); err != nil {
 		return fmt.Errorf("invalid repository path: %w", err)
 	}
 
@@ -161,29 +162,13 @@ func (m *JjWorkspaceManager) RemoveMultipleWorkspaces(repoPath string, names []s
 			shellescape(repoPath),
 			shellescape(target.Name))
 
-		if _, err := m.jjService.Run(forgetCmd); err != nil {
+		if _, err := m.runner.Run(forgetCmd); err != nil {
 			return fmt.Errorf("failed to forget workspace %q: %w", target.Name, err)
 		}
 
 		if err := os.RemoveAll(target.Path); err != nil {
 			return fmt.Errorf("failed to remove workspace directory %q: %w", target.Name, err)
 		}
-	}
-
-	return nil
-}
-
-func validateWorkspaceName(name string) error {
-	if name == "" {
-		return fmt.Errorf("workspace name cannot be empty")
-	}
-
-	if strings.ContainsAny(name, ";&|`$(){}[]<>") {
-		return fmt.Errorf("invalid characters in workspace name: %q", name)
-	}
-
-	if strings.HasPrefix(name, "-") {
-		return fmt.Errorf("workspace name cannot start with dash: %q", name)
 	}
 
 	return nil

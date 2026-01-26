@@ -60,7 +60,7 @@ func TestRemoveCommand_RemoveMultipleCleanWorktrees(t *testing.T) {
 			// Add remove command mocks for successful cases
 			for _, target := range tt.targets {
 				for _, wt := range worktrees {
-					if wt.Name() == target {
+					if wt.Name == target {
 						mockRunner.outputs["git -C /repo worktree remove "+wt.Path] = ""
 						break
 					}
@@ -83,15 +83,16 @@ func TestRemoveCommand_RemoveMultipleCleanWorktrees(t *testing.T) {
 }
 
 func TestRemoveCommand_RejectsMainWorktree(t *testing.T) {
-	worktrees := []internal.Worktree{
+	worktrees := []internal.Workspace{
 		{
 			Path:   "/repo",
-			Branch: "main",
+			Name: "main",
+			Labels: []string{"main"},
 			Status: internal.StatusClean,
 		},
 		{
 			Path:   "/repo/worktrees/feature-auth",
-			Branch: "feature/auth",
+			Name: "feature/auth",
 			Status: internal.StatusClean,
 		},
 	}
@@ -112,20 +113,21 @@ func TestRemoveCommand_RejectsMainWorktree(t *testing.T) {
 }
 
 func TestRemoveCommand_RejectsDirtyWorktree(t *testing.T) {
-	worktrees := []internal.Worktree{
+	worktrees := []internal.Workspace{
 		{
 			Path:   "/repo",
-			Branch: "main",
+			Name: "main",
+			Labels: []string{"main"},
 			Status: internal.StatusClean,
 		},
 		{
 			Path:   "/repo/worktrees/feature-auth",
-			Branch: "feature/auth",
+			Name: "feature/auth",
 			Status: internal.StatusClean,
 		},
 		{
 			Path:   "/repo/worktrees/feature-ui",
-			Branch: "feature/ui",
+			Name: "feature/ui",
 			Status: internal.StatusDirty,
 		},
 	}
@@ -146,15 +148,16 @@ func TestRemoveCommand_RejectsDirtyWorktree(t *testing.T) {
 }
 
 func TestRemoveCommand_RejectsNonexistentWorktree(t *testing.T) {
-	worktrees := []internal.Worktree{
+	worktrees := []internal.Workspace{
 		{
 			Path:   "/repo",
-			Branch: "main",
+			Name: "main",
+			Labels: []string{"main"},
 			Status: internal.StatusClean,
 		},
 		{
 			Path:   "/repo/worktrees/feature-auth",
-			Branch: "feature/auth",
+			Name: "feature/auth",
 			Status: internal.StatusClean,
 		},
 	}
@@ -251,20 +254,21 @@ func TestRemoveCommand_ActualCommandConfiguration(t *testing.T) {
 
 func TestRemoveCommand_ValidationOrderMatters(t *testing.T) {
 	// Test that all validations are performed before any removal
-	worktrees := []internal.Worktree{
+	worktrees := []internal.Workspace{
 		{
 			Path:   "/repo",
-			Branch: "main",
+			Name: "main",
+			Labels: []string{"main"},
 			Status: internal.StatusClean,
 		},
 		{
 			Path:   "/repo/worktrees/feature-auth",
-			Branch: "feature/auth",
+			Name: "feature/auth",
 			Status: internal.StatusClean,
 		},
 		{
 			Path:   "/repo/worktrees/feature-ui",
-			Branch: "feature/ui",
+			Name: "feature/ui",
 			Status: internal.StatusDirty,
 		},
 	}
@@ -290,11 +294,12 @@ func TestRemoveCommand_ValidationOrderMatters(t *testing.T) {
 }
 
 // createCleanWorktrees creates a set of clean worktrees with main worktree
-func createCleanWorktrees(targets []string) []internal.Worktree {
-	worktrees := []internal.Worktree{
+func createCleanWorktrees(targets []string) []internal.Workspace {
+	worktrees := []internal.Workspace{
 		{
 			Path:   "/repo",
-			Branch: "main",
+			Name: "main",
+			Labels: []string{"main"},
 			Status: internal.StatusClean,
 		},
 	}
@@ -314,9 +319,9 @@ func createCleanWorktrees(targets []string) []internal.Worktree {
 			branch = target
 		}
 
-		worktrees = append(worktrees, internal.Worktree{
+		worktrees = append(worktrees, internal.Workspace{
 			Path:   "/repo/worktrees/" + target,
-			Branch: branch,
+			Name: branch,
 			Status: internal.StatusClean,
 		})
 	}
@@ -325,7 +330,7 @@ func createCleanWorktrees(targets []string) []internal.Worktree {
 }
 
 // setupMockRunner creates a mock runner with common worktree outputs
-func setupMockRunner(worktrees []internal.Worktree, withDirtyStatus bool) *testMockCommandRunner {
+func setupMockRunner(worktrees []internal.Workspace, withDirtyStatus bool) *testMockCommandRunner {
 	mockRunner := &testMockCommandRunner{
 		outputs: map[string]string{
 			"git worktree list --porcelain": generateMockWorktreeOutput(worktrees),
@@ -346,14 +351,18 @@ func setupMockRunner(worktrees []internal.Worktree, withDirtyStatus bool) *testM
 }
 
 // Helper function to generate mock worktree output
-func generateMockWorktreeOutput(worktrees []internal.Worktree) string {
+func generateMockWorktreeOutput(worktrees []internal.Workspace) string {
 	if len(worktrees) == 0 {
 		return ""
 	}
 
 	var parts []string
 	for _, wt := range worktrees {
-		part := fmt.Sprintf("worktree %s\nHEAD abc123\nbranch refs/heads/%s", wt.Path, wt.Branch)
+		branch := ""
+		if len(wt.Labels) > 0 {
+			branch = wt.Labels[0]
+		}
+		part := fmt.Sprintf("worktree %s\nHEAD abc123\nbranch refs/heads/%s", wt.Path, branch)
 		parts = append(parts, part)
 	}
 	return strings.Join(parts, "\n\n")

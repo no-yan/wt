@@ -9,21 +9,23 @@ import (
 func TestFindWorktreeByName(t *testing.T) {
 	tests := []struct {
 		name      string
-		worktrees []internal.Worktree
+		worktrees []internal.Workspace
 		target    string
 		want      string
 		wantErr   bool
 	}{
 		{
 			name: "exact match found",
-			worktrees: []internal.Worktree{
+			worktrees: []internal.Workspace{
 				{
 					Path:   "/repo",
-					Branch: "main",
+					Name: "main",
+			Labels: []string{"main"},
 				},
 				{
 					Path:   "/repo/worktrees/feature-auth",
-					Branch: "feature/auth",
+					Name: "feature-auth",
+			Labels: []string{"feature/auth"},
 				},
 			},
 			target:  "feature-auth",
@@ -32,14 +34,16 @@ func TestFindWorktreeByName(t *testing.T) {
 		},
 		{
 			name: "main branch match",
-			worktrees: []internal.Worktree{
+			worktrees: []internal.Workspace{
 				{
 					Path:   "/repo",
-					Branch: "main",
+					Name: "main",
+			Labels: []string{"main"},
 				},
 				{
 					Path:   "/repo/worktrees/feature-auth",
-					Branch: "feature/auth",
+					Name: "feature-auth",
+			Labels: []string{"feature/auth"},
 				},
 			},
 			target:  "main",
@@ -48,10 +52,11 @@ func TestFindWorktreeByName(t *testing.T) {
 		},
 		{
 			name: "no match found",
-			worktrees: []internal.Worktree{
+			worktrees: []internal.Workspace{
 				{
 					Path:   "/repo",
-					Branch: "main",
+					Name: "main",
+			Labels: []string{"main"},
 				},
 			},
 			target:  "nonexistent",
@@ -60,7 +65,7 @@ func TestFindWorktreeByName(t *testing.T) {
 		},
 		{
 			name:      "empty worktrees list",
-			worktrees: []internal.Worktree{},
+			worktrees: []internal.Workspace{},
 			target:    "anything",
 			want:      "",
 			wantErr:   true,

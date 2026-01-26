@@ -189,21 +189,3 @@ func TestJjService_GetBookmarksInRange(t *testing.T) {
 		})
 	}
 }
-
-func TestJjService_Run(t *testing.T) {
-	mockRunner := &jjMockRunner{
-		outputs: map[string]string{
-			"test command": "test output",
-		},
-	}
-
-	service := NewJjService(mockRunner)
-	output, err := service.Run("test command")
-
-	if err != nil {
-		t.Errorf("Run() unexpected error: %v", err)
-	}
-	if output != "test output" {
-		t.Errorf("Run() = %q, want %q", output, "test output")
-	}
-}

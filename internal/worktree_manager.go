@@ -23,11 +23,7 @@ func NewWorktreeManager(gitService *GitService, runner CommandRunner) *WorktreeM
 // AddWorkspace implements WorkspaceManager interface for Git
 func (wm *WorktreeManager) AddWorkspace(repoPath, name string, opts AddOptions) (string, error) {
 	// For Git, name is the branch name
-	branch := name
-	if opts.Branch != "" {
-		branch = opts.Branch
-	}
-	return wm.AddWorktree(repoPath, branch)
+	return wm.AddWorktree(repoPath, name)
 }
 
 // RemoveWorkspace implements WorkspaceManager interface for Git
@@ -41,11 +37,11 @@ func (wm *WorktreeManager) RemoveMultipleWorkspaces(repoPath string, names []str
 }
 
 func (wm *WorktreeManager) AddWorktree(repoPath, branch string) (string, error) {
-	if err := validateBranchName(branch); err != nil {
+	if err := ValidateName(branch); err != nil {
 		return "", err
 	}
 
-	if err := validatePath(repoPath); err != nil {
+	if err := ValidatePath(repoPath); err != nil {
 		return "", fmt.Errorf("invalid repository path: %w", err)
 	}
 
@@ -64,7 +60,7 @@ func (wm *WorktreeManager) AddWorktree(repoPath, branch string) (string, error) 
 }
 
 func (wm *WorktreeManager) RemoveWorktree(repoPath, name string) error {
-	if err := validatePath(repoPath); err != nil {
+	if err := ValidatePath(repoPath); err != nil {
 		return fmt.Errorf("invalid repository path: %w", err)
 	}
 
@@ -72,35 +68,36 @@ func (wm *WorktreeManager) RemoveWorktree(repoPath, name string) error {
 		return fmt.Errorf("worktree name cannot be empty")
 	}
 
-	// Get all worktrees to find the target
-	worktrees, err := wm.gitService.ListWorktrees()
+	// Get all workspaces to find the target
+	opts := ListOptions{IncludeStatus: true}
+	workspaces, err := wm.gitService.ListWorkspaces(opts)
 	if err != nil {
 		return fmt.Errorf("failed to list worktrees: %w", err)
 	}
 
-	var targetWorktree *Worktree
-	for _, wt := range worktrees {
-		if wt.Name() == name {
-			targetWorktree = &wt
+	var targetWorkspace *Workspace
+	for i := range workspaces {
+		if workspaces[i].Name == name {
+			targetWorkspace = &workspaces[i]
 			break
 		}
 	}
 
-	if targetWorktree == nil {
+	if targetWorkspace == nil {
 		return fmt.Errorf("worktree %q not found", name)
 	}
 
 	// Safety check: don't remove the main worktree
-	if !strings.Contains(targetWorktree.Path, "/worktrees/") {
+	if !strings.Contains(targetWorkspace.Path, "/worktrees/") {
 		return fmt.Errorf("cannot remove main worktree %q", name)
 	}
 
 	// Safety check: warn if worktree has uncommitted changes
-	if targetWorktree.Status == StatusDirty {
+	if targetWorkspace.Status == StatusDirty {
 		return fmt.Errorf("worktree %q has uncommitted changes, commit or stash them first", name)
 	}
 
-	if err := wm.removeGitWorktree(repoPath, targetWorktree.Path); err != nil {
+	if err := wm.removeGitWorktree(repoPath, targetWorkspace.Path); err != nil {
 		return fmt.Errorf("failed to remove worktree: %w", err)
 	}
 
@@ -111,7 +108,7 @@ func (wm *WorktreeManager) RemoveWorktree(repoPath, name string) error {
 // It validates all worktrees upfront before removing any, ensuring atomic behavior
 // (either all succeed or all fail). This prevents partial removal states.
 func (wm *WorktreeManager) RemoveMultipleWorktrees(repoPath string, names []string) error {
-	if err := validatePath(repoPath); err != nil {
+	if err := ValidatePath(repoPath); err != nil {
 		return fmt.Errorf("invalid repository path: %w", err)
 	}
 
@@ -119,49 +116,50 @@ func (wm *WorktreeManager) RemoveMultipleWorktrees(repoPath string, names []stri
 		return fmt.Errorf("at least one worktree name is required")
 	}
 
-	// Get all worktrees once for efficiency (avoids repeated ListWorktrees calls)
-	worktrees, err := wm.gitService.ListWorktrees()
+	// Get all workspaces once for efficiency (avoids repeated ListWorkspaces calls)
+	opts := ListOptions{IncludeStatus: true}
+	workspaces, err := wm.gitService.ListWorkspaces(opts)
 	if err != nil {
 		return fmt.Errorf("failed to list worktrees: %w", err)
 	}
 
 	// Create lookup map for O(1) name resolution
-	worktreeMap := make(map[string]*Worktree)
-	for i := range worktrees {
-		worktreeMap[worktrees[i].Name()] = &worktrees[i]
+	workspaceMap := make(map[string]*Workspace)
+	for i := range workspaces {
+		workspaceMap[workspaces[i].Name] = &workspaces[i]
 	}
 
 	// Phase 1: Validate all targets before removing any (fail-fast strategy)
 	// This ensures we don't end up in a partial removal state
-	var targetsToRemove []*Worktree
+	var targetsToRemove []*Workspace
 	for _, name := range names {
 		if name == "" {
 			return fmt.Errorf("worktree name cannot be empty")
 		}
 
-		targetWorktree, exists := worktreeMap[name]
+		targetWorkspace, exists := workspaceMap[name]
 		if !exists {
 			return fmt.Errorf("worktree %q not found", name)
 		}
 
 		// Safety: Only remove worktrees in the managed worktrees/ directory
-		if !strings.Contains(targetWorktree.Path, "/worktrees/") {
+		if !strings.Contains(targetWorkspace.Path, "/worktrees/") {
 			return fmt.Errorf("cannot remove main worktree %q", name)
 		}
 
 		// Safety: Prevent accidental data loss from uncommitted changes
-		if targetWorktree.Status == StatusDirty {
+		if targetWorkspace.Status == StatusDirty {
 			return fmt.Errorf("worktree %q has uncommitted changes, commit or stash them first", name)
 		}
 
-		targetsToRemove = append(targetsToRemove, targetWorktree)
+		targetsToRemove = append(targetsToRemove, targetWorkspace)
 	}
 
 	// Phase 2: All validations passed, execute removals
 	// If any removal fails, some worktrees will be removed and some won't
 	for _, target := range targetsToRemove {
 		if err := wm.removeGitWorktree(repoPath, target.Path); err != nil {
-			return fmt.Errorf("failed to remove worktree %q: %w", target.Name(), err)
+			return fmt.Errorf("failed to remove worktree %q: %w", target.Name, err)
 		}
 	}
 
@@ -289,34 +287,6 @@ func shellescape(s string) string {
 		return "'" + strings.ReplaceAll(s, "'", "'\"'\"'") + "'"
 	}
 	return s
-}
-
-func validateBranchName(branch string) error {
-	if branch == "" {
-		return fmt.Errorf("branch name cannot be empty")
-	}
-
-	if strings.ContainsAny(branch, ";&|`$(){}[]<>") {
-		return fmt.Errorf("invalid characters in branch name: %q", branch)
-	}
-
-	if strings.HasPrefix(branch, "-") {
-		return fmt.Errorf("branch name cannot start with dash: %q", branch)
-	}
-
-	return nil
-}
-
-func validatePath(path string) error {
-	if path == "" {
-		return fmt.Errorf("path cannot be empty")
-	}
-
-	if !filepath.IsAbs(path) {
-		return fmt.Errorf("path must be absolute: %q", path)
-	}
-
-	return nil
 }
 
 func GenerateWorktreePath(repoPath, branch string) string {

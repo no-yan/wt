@@ -114,7 +114,7 @@ func TestIntegrationWorkflow(t *testing.T) {
 	})
 
 	t.Run("List worktrees", func(t *testing.T) {
-		worktrees, err := gitService.ListWorktrees()
+		worktrees, err := gitService.ListWorkspaces(internal.ListOptions{IncludeStatus: true})
 		if err != nil {
 			t.Fatalf("Failed to list worktrees: %v", err)
 		}
@@ -126,7 +126,7 @@ func TestIntegrationWorkflow(t *testing.T) {
 		// Check that we have main and feature-test1
 		names := make(map[string]bool)
 		for _, wt := range worktrees {
-			names[wt.Name()] = true
+			names[wt.Name] = true
 		}
 
 		if !names["main"] {
@@ -150,7 +150,7 @@ func TestIntegrationWorkflow(t *testing.T) {
 	})
 
 	t.Run("List all worktrees after adding second", func(t *testing.T) {
-		worktrees, err := gitService.ListWorktrees()
+		worktrees, err := gitService.ListWorkspaces(internal.ListOptions{IncludeStatus: true})
 		if err != nil {
 			t.Fatalf("Failed to list worktrees: %v", err)
 		}
@@ -167,7 +167,7 @@ func TestIntegrationWorkflow(t *testing.T) {
 		}
 
 		// Verify worktree was removed
-		worktrees, err := gitService.ListWorktrees()
+		worktrees, err := gitService.ListWorkspaces(internal.ListOptions{IncludeStatus: true})
 		if err != nil {
 			t.Fatalf("Failed to list worktrees after removal: %v", err)
 		}
@@ -178,7 +178,7 @@ func TestIntegrationWorkflow(t *testing.T) {
 
 		// Check that feature-test1 is gone
 		for _, wt := range worktrees {
-			if wt.Name() == "feature-test1" {
+			if wt.Name == "feature-test1" {
 				t.Error("feature-test1 worktree should have been removed")
 			}
 		}
@@ -193,14 +193,14 @@ func TestIntegrationWorkflow(t *testing.T) {
 		}
 
 		// List worktrees and check status
-		worktrees, err := gitService.ListWorktrees()
+		worktrees, err := gitService.ListWorkspaces(internal.ListOptions{IncludeStatus: true})
 		if err != nil {
 			t.Fatalf("Failed to list worktrees: %v", err)
 		}
 
-		var test2Worktree *internal.Worktree
+		var test2Worktree *internal.Workspace
 		for _, wt := range worktrees {
-			if wt.Name() == "feature-test2" {
+			if wt.Name == "feature-test2" {
 				test2Worktree = &wt
 				break
 			}

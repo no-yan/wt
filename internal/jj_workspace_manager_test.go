@@ -63,7 +63,7 @@ func TestJjWorkspaceManager_AddWorkspace(t *testing.T) {
 				errors:  map[string]error{},
 			}
 			service := NewJjService(mockRunner)
-			manager := NewJjWorkspaceManager(service)
+			manager := NewJjWorkspaceManager(service, mockRunner)
 
 			path, err := manager.AddWorkspace(tmpDir, tt.wsName, tt.opts)
 
@@ -183,7 +183,7 @@ func TestJjWorkspaceManager_RemoveWorkspace(t *testing.T) {
 			}
 
 			service := NewJjService(mockRunner)
-			manager := NewJjWorkspaceManager(service)
+			manager := NewJjWorkspaceManager(service, mockRunner)
 
 			err = manager.RemoveWorkspace(tmpDir, tt.wsName)
 
@@ -220,9 +220,9 @@ func TestValidateWorkspaceName(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateWorkspaceName(tt.wsName)
+			err := ValidateName(tt.wsName)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("validateWorkspaceName(%q) error = %v, wantErr %v", tt.wsName, err, tt.wantErr)
+				t.Errorf("ValidateName(%q) error = %v, wantErr %v", tt.wsName, err, tt.wantErr)
 			}
 		})
 	}

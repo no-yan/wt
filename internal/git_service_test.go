@@ -6,12 +6,12 @@ import (
 	"testing"
 )
 
-func TestGitService_ListWorktrees(t *testing.T) {
+func TestGitService_ListWorkspaces(t *testing.T) {
 	tests := []struct {
 		name          string
 		gitOutput     string
 		statusOutputs map[string]string
-		want          []Worktree
+		want          []Workspace
 		wantErr       bool
 	}{
 		{
@@ -22,12 +22,13 @@ branch refs/heads/main`,
 			statusOutputs: map[string]string{
 				"/repo": "",
 			},
-			want: []Worktree{
+			want: []Workspace{
 				{
-					Path:   "/repo",
-					Head:   "abc123",
-					Branch: "main",
-					Status: StatusClean,
+					Name:     "main",
+					Path:     "/repo",
+					Revision: "abc123",
+					Labels:   []string{"main"},
+					Status:   StatusClean,
 				},
 			},
 			wantErr: false,
@@ -45,18 +46,20 @@ branch refs/heads/feature/auth`,
 				"/repo":                        "",
 				"/repo/worktrees/feature-auth": " M file.go\n?? new.go",
 			},
-			want: []Worktree{
+			want: []Workspace{
 				{
-					Path:   "/repo",
-					Head:   "abc123",
-					Branch: "main",
-					Status: StatusClean,
+					Name:     "main",
+					Path:     "/repo",
+					Revision: "abc123",
+					Labels:   []string{"main"},
+					Status:   StatusClean,
 				},
 				{
-					Path:   "/repo/worktrees/feature-auth",
-					Head:   "def456",
-					Branch: "feature/auth",
-					Status: StatusDirty,
+					Name:     "feature-auth",
+					Path:     "/repo/worktrees/feature-auth",
+					Revision: "def456",
+					Labels:   []string{"feature/auth"},
+					Status:   StatusDirty,
 				},
 			},
 			wantErr: false,
@@ -76,14 +79,15 @@ branch refs/heads/feature/auth`,
 			}
 
 			service := NewGitService(mockRunner)
-			got, err := service.ListWorktrees()
+			opts := ListOptions{IncludeStatus: true}
+			got, err := service.ListWorkspaces(opts)
 
 			if (err != nil) != tt.wantErr {
-				t.Errorf("GitService.ListWorktrees() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GitService.ListWorkspaces() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("GitService.ListWorktrees() = %v, want %v", got, tt.want)
+				t.Errorf("GitService.ListWorkspaces() = %v, want %v", got, tt.want)
 			}
 		})
 	}

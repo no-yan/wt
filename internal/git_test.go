@@ -9,19 +9,20 @@ func TestParseWorktreeList(t *testing.T) {
 	tests := []struct {
 		name   string
 		output string
-		want   []Worktree
+		want   []Workspace
 	}{
 		{
 			name: "single worktree porcelain format",
 			output: `worktree /repo
 HEAD abc123
 branch refs/heads/main`,
-			want: []Worktree{
+			want: []Workspace{
 				{
-					Path:   "/repo",
-					Head:   "abc123",
-					Branch: "main",
-					Status: StatusClean,
+					Name:     "main",
+					Path:     "/repo",
+					Revision: "abc123",
+					Labels:   []string{"main"},
+					Status:   StatusClean,
 				},
 			},
 		},
@@ -34,18 +35,20 @@ branch refs/heads/main
 worktree /repo/worktrees/test-feature
 HEAD def456
 branch refs/heads/test-feature`,
-			want: []Worktree{
+			want: []Workspace{
 				{
-					Path:   "/repo",
-					Head:   "abc123",
-					Branch: "main",
-					Status: StatusClean,
+					Name:     "main",
+					Path:     "/repo",
+					Revision: "abc123",
+					Labels:   []string{"main"},
+					Status:   StatusClean,
 				},
 				{
-					Path:   "/repo/worktrees/test-feature",
-					Head:   "def456",
-					Branch: "test-feature",
-					Status: StatusClean,
+					Name:     "test-feature",
+					Path:     "/repo/worktrees/test-feature",
+					Revision: "def456",
+					Labels:   []string{"test-feature"},
+					Status:   StatusClean,
 				},
 			},
 		},
@@ -54,19 +57,20 @@ branch refs/heads/test-feature`,
 			output: `worktree /repo
 HEAD abc123
 detached`,
-			want: []Worktree{
+			want: []Workspace{
 				{
-					Path:   "/repo",
-					Head:   "abc123",
-					Branch: "detached HEAD",
-					Status: StatusClean,
+					Name:     "detached HEAD",
+					Path:     "/repo",
+					Revision: "abc123",
+					Labels:   []string{"detached HEAD"},
+					Status:   StatusClean,
 				},
 			},
 		},
 		{
 			name:   "empty output",
 			output: "",
-			want:   []Worktree{},
+			want:   []Workspace{},
 		},
 	}
 

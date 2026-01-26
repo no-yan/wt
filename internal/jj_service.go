@@ -109,9 +109,3 @@ func (j *JjService) GetBookmarksInRange(workspacePath, revRange string) ([]strin
 func (j *JjService) runStatus(workspacePath string) (string, error) {
 	return j.runner.Run(fmt.Sprintf("jj -R %s status", shellescape(workspacePath)))
 }
-
-// Run executes a command using the service's runner.
-// Exposed for use by JjWorkspaceManager.
-func (j *JjService) Run(command string) (string, error) {
-	return j.runner.Run(command)
-}
